@@ -6,12 +6,16 @@ import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { setAuthCookies } from '@/lib/utils/cookies';
 import { loginRateLimit } from '@/lib/middleware/rateLimit.middleware';
 import { getDeviceInfo } from '@/lib/middleware/auth.middleware';
+import { logLogin } from '@/lib/utils/auditLogger';
 
 export async function POST(request: NextRequest) {
+  let email: string | undefined;
+
   try {
     await loginRateLimit(request);
 
     const body = await request.json();
+    email = body.email; // Store email for error logging
 
     const validationResult = loginSchema.safeParse(body);
     if (!validationResult.success) {
@@ -22,6 +26,9 @@ export async function POST(request: NextRequest) {
     const deviceInfo = getDeviceInfo(request);
 
     const { user, accessToken, refreshToken } = await AuthService.login(credentials, deviceInfo);
+
+    // Log successful login
+    await logLogin(request, credentials.email, true, user._id.toString());
 
     const permissions = user.roles.flatMap((role: any) =>
       role.permissions.map((p: any) => ({
@@ -57,7 +64,11 @@ export async function POST(request: NextRequest) {
     setAuthCookies(response, accessToken, refreshToken, credentials.rememberMe || false);
 
     return response;
-  } catch (error) {
+  } catch (error: any) {
+    // Log failed login
+    if (email) {
+      await logLogin(request, email, false, undefined, error.message);
+    }
     return errorResponse(error);
   }
 }

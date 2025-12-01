@@ -36,6 +36,13 @@ This is a production-ready Role-Based Access Control (RBAC) system built with:
 - ✅ Input validation (Zod schemas)
 - ✅ SQL injection prevention (Mongoose)
 
+### Admin Features
+- ✅ User management UI (create, read, update, delete)
+- ✅ Role management and assignment interface
+- ✅ Audit logging and activity tracking
+- ✅ Activity dashboard with statistics
+- ✅ Search and filter capabilities
+
 ## 🚀 Setup Instructions
 
 ### 1. Install Dependencies
@@ -222,6 +229,45 @@ await requirePermission(request, 'users.delete');
 - `GET /api/roles` - List all roles
 - `GET /api/permissions` - List all permissions
 
+### Audit Logs
+- `GET /api/audit-logs` - List audit logs (with filters)
+- `GET /api/audit-logs/statistics` - Get audit statistics
+
+## 👨‍💼 Admin Features
+
+### User Management
+Access the user management interface at `/dashboard/users`:
+- **View all users** with pagination, search, and role filtering
+- **Create new users** with email, password, and role assignment
+- **Edit existing users** - update details, change roles, toggle active status
+- **Delete users** with confirmation prompt
+- **Search users** by name or email
+- **Filter by role** (Admin, Manager, User)
+
+### Role Management
+View and understand roles at `/dashboard/roles`:
+- **View all roles** with hierarchy levels
+- **See permissions** grouped by category for each role
+- **Understand access levels** - which permissions each role has
+
+### Activity Dashboard
+Monitor system activity at `/dashboard/activity`:
+- **Statistics cards** showing total events, success rate, and failure rate
+- **Recent activity feed** with action types, timestamps, and user info
+- **Filter by resource** (auth, users, roles, projects, settings)
+- **Filter by status** (success, failure)
+- **IP address tracking** for security monitoring
+- **Error messages** for failed actions
+
+### Audit Logging
+All user actions are automatically logged:
+- **Authentication events**: login, logout, registration (both success and failure)
+- **User management**: create, update, delete users
+- **Role changes**: role assignments and modifications
+- **Resource tracking**: which resources were affected
+- **Details captured**: IP address, user agent, timestamp, user info
+- **Error tracking**: failed actions with error messages
+
 ## 🛡️ Security Features
 
 ### Token Security
@@ -247,18 +293,39 @@ await requirePermission(request, 'users.delete');
 ### 1. Test Different Roles
 
 Login as each user and observe:
-- **Admin**: Can see all navigation items
-- **Manager**: Cannot see all options
-- **User**: Very limited access
+- **Admin**: Can see all navigation items (Users, Roles, Activity, Analytics, Projects, Settings)
+- **Manager**: Can see Users, Analytics, Projects, Settings (no Roles or Activity)
+- **User**: Very limited access (Projects, Settings only)
 
 ### 2. Test Permission Gates
 
 Try accessing:
+- `/dashboard/users` - Only visible to Admin & Manager
+- `/dashboard/roles` - Only visible to Admin & Manager
+- `/dashboard/activity` - Only visible to Admin & Manager
 - `/dashboard/analytics` - Only visible to Admin & Manager
 - `/dashboard/projects` - Visible to all
 - `/dashboard/settings` - Visible to all
 
-### 3. Test API Protection
+### 3. Test User Management
+
+Login as Admin and try:
+1. **Create a user**: Navigate to `/dashboard/users` and click "Add User"
+2. **Edit a user**: Click "Edit" on any user, modify details, change roles
+3. **Delete a user**: Click "Delete" and confirm
+4. **Search users**: Use the search box to find users by name or email
+5. **Filter by role**: Use the role dropdown to filter users
+
+### 4. Test Audit Logging
+
+Login as Admin and:
+1. Navigate to `/dashboard/activity`
+2. Perform some actions (create/edit/delete users, login/logout)
+3. Return to `/dashboard/activity` and verify the actions are logged
+4. Check that IP addresses and timestamps are recorded
+5. Filter by resource or status to see specific logs
+
+### 5. Test API Protection
 
 ```bash
 # Without auth - should fail

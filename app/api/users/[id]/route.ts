@@ -6,6 +6,7 @@ import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { PERMISSIONS } from '@/config/permissions';
 import { updateUserSchema } from '@/lib/utils/validation';
 import { ValidationError } from '@/lib/utils/errors';
+import { logAuthenticatedAction } from '@/lib/utils/auditLogger';
 
 export async function GET(
   request: NextRequest,
@@ -68,6 +69,16 @@ export async function PATCH(
 
     const user = await UserService.updateUser(params.id, userData, authRequest.user!.userId);
 
+    // Log user update
+    await logAuthenticatedAction(authRequest, 'users.update', 'users', {
+      resourceId: params.id,
+      details: {
+        updatedFields: Object.keys(userData),
+        email: user.email,
+        fullName: user.fullName
+      }
+    });
+
     const userResponse = {
       id: user._id.toString(),
       email: user.email,
@@ -84,7 +95,16 @@ export async function PATCH(
     };
 
     return successResponse({ user: userResponse }, 'User updated successfully');
-  } catch (error) {
+  } catch (error: any) {
+    // Log failed user update
+    const authRequest = await authenticateRequest(request).catch(() => null);
+    if (authRequest) {
+      await logAuthenticatedAction(authRequest, 'users.update', 'users', {
+        resourceId: params.id,
+        status: 'failure',
+        errorMessage: error.message
+      });
+    }
     return errorResponse(error);
   }
 }
@@ -97,10 +117,33 @@ export async function DELETE(
     const authRequest = await authenticateRequest(request);
     await requirePermission(authRequest, PERMISSIONS.USERS_DELETE);
 
+    // Get user info before deletion for logging
+    const userToDelete = await UserService.getUserById(params.id);
+
     await UserService.deleteUser(params.id, authRequest.user!.userId);
 
+    // Log user deletion
+    await logAuthenticatedAction(authRequest, 'users.delete', 'users', {
+      resourceId: params.id,
+      details: {
+        deletedUser: {
+          email: userToDelete?.email,
+          fullName: userToDelete?.fullName
+        }
+      }
+    });
+
     return successResponse(null, 'User deleted successfully');
-  } catch (error) {
+  } catch (error: any) {
+    // Log failed user deletion
+    const authRequest = await authenticateRequest(request).catch(() => null);
+    if (authRequest) {
+      await logAuthenticatedAction(authRequest, 'users.delete', 'users', {
+        resourceId: params.id,
+        status: 'failure',
+        errorMessage: error.message
+      });
+    }
     return errorResponse(error);
   }
 }

@@ -4,12 +4,16 @@ import { registerSchema } from '@/lib/utils/validation';
 import { ValidationError } from '@/lib/utils/errors';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { registerRateLimit } from '@/lib/middleware/rateLimit.middleware';
+import { logRegistration } from '@/lib/utils/auditLogger';
 
 export async function POST(request: NextRequest) {
+  let email: string | undefined;
+
   try {
     await registerRateLimit(request);
 
     const body = await request.json();
+    email = body.email; // Store email for error logging
 
     const validationResult = registerSchema.safeParse(body);
     if (!validationResult.success) {
@@ -19,6 +23,9 @@ export async function POST(request: NextRequest) {
     const userData = validationResult.data;
 
     const user = await AuthService.register(userData);
+
+    // Log successful registration
+    await logRegistration(request, user.email, user._id.toString(), true);
 
     const userResponse = {
       id: user._id.toString(),
@@ -34,7 +41,11 @@ export async function POST(request: NextRequest) {
       'Registration successful',
       201
     );
-  } catch (error) {
+  } catch (error: any) {
+    // Log failed registration
+    if (email) {
+      await logRegistration(request, email, 'unknown', false, error.message);
+    }
     return errorResponse(error);
   }
 }

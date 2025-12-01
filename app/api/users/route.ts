@@ -7,6 +7,7 @@ import { PERMISSIONS } from '@/config/permissions';
 import { createUserSchema } from '@/lib/utils/validation';
 import { ValidationError } from '@/lib/utils/errors';
 import { PAGINATION } from '@/lib/utils/constants';
+import { logAuthenticatedAction } from '@/lib/utils/auditLogger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -73,6 +74,16 @@ export async function POST(request: NextRequest) {
 
     const user = await UserService.createUser(userData, authRequest.user!.userId);
 
+    // Log user creation
+    await logAuthenticatedAction(authRequest, 'users.create', 'users', {
+      resourceId: user._id.toString(),
+      details: {
+        email: user.email,
+        fullName: user.fullName,
+        roles: user.roles
+      }
+    });
+
     const userResponse = {
       id: user._id.toString(),
       email: user.email,
@@ -84,7 +95,15 @@ export async function POST(request: NextRequest) {
     };
 
     return successResponse({ user: userResponse }, 'User created successfully', 201);
-  } catch (error) {
+  } catch (error: any) {
+    // Log failed user creation
+    const authRequest = await authenticateRequest(request).catch(() => null);
+    if (authRequest) {
+      await logAuthenticatedAction(authRequest, 'users.create', 'users', {
+        status: 'failure',
+        errorMessage: error.message
+      });
+    }
     return errorResponse(error);
   }
 }
