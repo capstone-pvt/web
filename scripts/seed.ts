@@ -1,3 +1,32 @@
+import fs from 'fs';
+import path from 'path';
+// Lightweight env loader for standalone runs (no external deps)
+function loadEnv() {
+  const root = process.cwd();
+  const paths = [path.join(root, '.env.local'), path.join(root, '.env')];
+  for (const p of paths) {
+    try {
+      if (fs.existsSync(p)) {
+        const content = fs.readFileSync(p, 'utf8');
+        for (const line of content.split(/\r?\n/)) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const idx = trimmed.indexOf('=');
+          if (idx === -1) continue;
+          const key = trimmed.slice(0, idx).trim();
+          const valRaw = trimmed.slice(idx + 1).trim();
+          const val = valRaw.replace(/^"|"$/g, '').replace(/^'|'$/g, '');
+          if (!(key in process.env)) process.env[key] = val;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    if (process.env.MONGODB_URI) break;
+  }
+}
+if (!process.env.MONGODB_URI) loadEnv();
+
 import mongoose from 'mongoose';
 import connectDB from '../lib/db/mongodb';
 import User from '../lib/db/models/User';

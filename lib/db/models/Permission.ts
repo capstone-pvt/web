@@ -40,7 +40,7 @@ const PermissionSchema = new Schema<IPermission>({
     type: String,
     required: true,
     lowercase: true,
-    enum: ['create', 'read', 'update', 'delete', 'view', 'manage', 'execute']
+    enum: ['create', 'read', 'update', 'delete', 'view', 'manage', 'execute', 'export']
   },
   category: {
     type: String,
