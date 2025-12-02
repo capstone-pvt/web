@@ -4,8 +4,15 @@ import { useEffect, useState } from 'react';
 import axios from '@/lib/api/axios';
 import { PERMISSIONS } from '@/config/permissions';
 import PermissionGate from '@/app/components/guards/PermissionGate';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/app/components/ui/accordion';
 
 interface Permission {
+  _id: string;
   id: string;
   name: string;
   displayName: string;
@@ -16,7 +23,8 @@ interface Permission {
 }
 
 interface Role {
-  id: string;
+  _id: string;
+  id:string;
   name: string;
   displayName: string;
   description: string;
@@ -28,7 +36,8 @@ interface Role {
 export default function RolesPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedRole, setExpandedRole] = useState<string | null>(null);
+  // State to control which accordion item is open
+  const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>();
 
   useEffect(() => {
     fetchRoles();
@@ -46,10 +55,6 @@ export default function RolesPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleExpanded = (roleId: string) => {
-    setExpandedRole(expandedRole === roleId ? null : roleId);
   };
 
   const groupPermissionsByCategory = (permissions: Permission[]) => {
@@ -84,21 +89,19 @@ export default function RolesPage() {
               <p className="text-gray-500 dark:text-gray-400">No roles found</p>
             </div>
           ) : (
-            roles.map((role) => {
-              const isExpanded = expandedRole === role.id;
-              const groupedPermissions = groupPermissionsByCategory(role.permissions);
-
-              return (
-                <div
-                  key={role.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden"
-                >
-                  <div
-                    className="p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    onClick={() => toggleExpanded(role.id)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
+            <Accordion
+              type="single"
+              collapsible
+              className="w-full"
+              value={openAccordionItem}
+              onValueChange={setOpenAccordionItem}
+            >
+              {roles.map((role) => {
+                const groupedPermissions = groupPermissionsByCategory(role.permissions);
+                return (
+                  <AccordionItem value={role._id} key={role._id}>
+                    <AccordionTrigger>
+                      <div className="flex-1 text-left">
                         <div className="flex items-center gap-3">
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                             {role.displayName}
@@ -116,75 +119,57 @@ export default function RolesPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <svg
-                          className={`w-6 h-6 text-gray-400 transition-transform ${
-                            isExpanded ? 'transform rotate-180' : ''
-                          }`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {isExpanded && (
-                    <div className="border-t border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-750">
-                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-                        Permissions by Category
-                      </h4>
-                      <div className="space-y-4">
-                        {Object.entries(groupedPermissions).map(([category, perms]) => (
-                          <div key={category}>
-                            <h5 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                              {category}
-                            </h5>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                              {perms.map((perm) => (
-                                <div
-                                  key={perm.id}
-                                  className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600"
-                                >
-                                  <svg
-                                    className="w-4 h-4 text-green-500 flex-shrink-0"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="border-t border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-750">
+                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                          Permissions by Category
+                        </h4>
+                        <div className="space-y-4">
+                          {Object.entries(groupedPermissions).map(([category, perms]) => (
+                            <div key={category}>
+                              <h5 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                                {category}
+                              </h5>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                {perms.map((perm) => (
+                                  <div
+                                    key={perm._id}
+                                    className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600"
                                   >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M5 13l4 4L19 7"
-                                    />
-                                  </svg>
-                                  <div className="min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                      {perm.displayName}
-                                    </p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                      {perm.name}
-                                    </p>
+                                    <svg
+                                      className="w-4 h-4 text-green-500 flex-shrink-0"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 13l4 4L19 7"
+                                      />
+                                    </svg>
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                        {perm.displayName}
+                                      </p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                        {perm.name}
+                                      </p>
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
           )}
         </div>
       </div>
