@@ -25,23 +25,26 @@ class UserRepository {
 
   async findById(id: string): Promise<IUser | null> {
     await connectDB();
-    return User.findById(id).populate({
+    const user = await User.findById(id).populate({
       path: 'roles',
       populate: { path: 'permissions' }
     });
+    return user;
   }
 
   async findByEmail(email: string): Promise<IUser | null> {
     await connectDB();
-    return User.findOne({ email }).populate({
+    const user = await User.findOne({ email }).populate({
       path: 'roles',
       populate: { path: 'permissions' }
     });
+    return user;
   }
 
   async findByEmailWithPassword(email: string): Promise<IUser | null> {
     await connectDB();
-    return User.findOne({ email }).select('+password').populate('roles');
+    const user = await User.findOne({ email }).select('+password').populate('roles');
+    return user;
   }
 
   async findAll(filters: UserFilters = {}): Promise<{ users: IUser[]; totalPages: number }> {
@@ -95,10 +98,11 @@ class UserRepository {
 
   async update(id: string, data: UpdateUserDTO): Promise<IUser | null> {
     await connectDB();
-    return User.findByIdAndUpdate(id, data, { new: true }).populate({
+    const user = await User.findByIdAndUpdate(id, data, { new: true }).populate({
       path: 'roles',
       populate: { path: 'permissions' }
     });
+    return user;
   }
 
   async updateRoles(userId: string, roleIds: string[]): Promise<IUser | null> {

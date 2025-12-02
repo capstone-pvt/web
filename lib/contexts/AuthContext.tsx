@@ -68,7 +68,8 @@ export function AuthProvider({ children }: Readonly<{
 
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
-    return user.permissions.some(p => p.name === permission);
+    // Now user.permissions is an array of strings, so we check directly
+    return user.permissions.includes(permission);
   };
 
   const hasRole = (role: string): boolean => {

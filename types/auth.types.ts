@@ -21,7 +21,7 @@ export interface AuthUser {
   lastName: string;
   fullName: string;
   roles: Role[];
-  permissions: Permission[];
+  permissions: string[]; // Changed from Permission[] to string[]
   isActive: boolean;
   lastLoginAt?: string;
 }

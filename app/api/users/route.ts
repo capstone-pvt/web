@@ -1,13 +1,14 @@
 import { NextRequest } from 'next/server';
 import UserRepository from '@/lib/repositories/user.repository';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
-import { authenticateRequest } from '@/lib/middleware/auth.middleware';
+import { authenticateRequest, authorizeRequest } from '@/lib/middleware/auth.middleware';
 import { UserFilters } from '@/types/user.types';
+import { PERMISSIONS } from '@/config/permissions';
 
 export async function GET(request: NextRequest) {
   try {
-    await authenticateRequest(request);
-    // TODO: Add authorization check to ensure only admins can access
+    const authRequest = await authenticateRequest(request);
+    await authorizeRequest(authRequest, [PERMISSIONS.USERS_READ]);
 
     const { searchParams } = new URL(request.url);
     const filters: UserFilters = {

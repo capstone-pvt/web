@@ -13,17 +13,9 @@ export async function GET(request: NextRequest) {
       throw new Error('User not found');
     }
 
+    // Extract only permission names as an array of strings
     const permissions = user.roles.flatMap((role: any) =>
-      role.permissions.map((p: any) => ({
-        id: p._id.toString(),
-        name: p.name,
-        displayName: p.displayName,
-        description: p.description,
-        resource: p.resource,
-        action: p.action,
-        category: p.category,
-        isSystemPermission: p.isSystemPermission
-      }))
+      (role.permissions || []).map((p: any) => p.name)
     );
 
     const userResponse = {
@@ -41,7 +33,7 @@ export async function GET(request: NextRequest) {
         description: r.description,
         hierarchy: r.hierarchy
       })),
-      permissions
+      permissions // Now an array of strings
     };
 
     return successResponse({ user: userResponse });

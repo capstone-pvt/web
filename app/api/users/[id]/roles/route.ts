@@ -1,12 +1,14 @@
 import { NextRequest } from 'next/server';
 import UserRepository from '@/lib/repositories/user.repository';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
-import { authenticateRequest } from '@/lib/middleware/auth.middleware';
+import { authenticateRequest, authorizeRequest } from '@/lib/middleware/auth.middleware';
+import { PERMISSIONS } from '@/config/permissions';
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await authenticateRequest(request);
-    // TODO: Add authorization check to ensure only admins can access
+    const authRequest = await authenticateRequest(request);
+    await authorizeRequest(authRequest, [PERMISSIONS.USERS_UPDATE]);
+
     const { id } = params;
     const body = await request.json();
     const { roles } = body;

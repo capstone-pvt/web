@@ -112,6 +112,7 @@ class AuthService {
 
   async getUserById(userId: string): Promise<IUser | null> {
     const user = await UserRepository.findById(userId);
+    console.log("User object from AuthService.getUserById:", JSON.stringify(user, null, 2)); // Added log
     return user;
   }
 

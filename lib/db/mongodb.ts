@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { seedSettings } from './seeders/setting.seeder'; // Import the seeder
 
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -32,6 +33,8 @@ async function connectDB(): Promise<typeof mongoose> {
 
     cached!.promise = mongoose.connect(uri, opts).then((mongoose) => {
       console.log('MongoDB connected successfully');
+      // Seed settings after successful connection
+      seedSettings();
       return mongoose;
     });
   }

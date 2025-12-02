@@ -36,7 +36,7 @@ export const PERMISSION_CATEGORIES = {
   PERMISSION_MANAGEMENT: 'Permission Management',
   PROJECT_MANAGEMENT: 'Project Management',
   ANALYTICS: 'Analytics',
-  SETTINGS: 'Settings'
+  SETTINGS_MANAGEMENT: 'Settings Management'
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;

@@ -151,10 +151,10 @@ async function seed() {
 function getCategoryForPermission(permission: string): string {
   if (permission.startsWith('users.')) return PERMISSION_CATEGORIES.USER_MANAGEMENT;
   if (permission.startsWith('roles.')) return PERMISSION_CATEGORIES.ROLE_MANAGEMENT;
+  if (permission.startsWith('permissions.')) return PERMISSION_CATEGORIES.PERMISSION_MANAGEMENT; // Corrected
   if (permission.startsWith('projects.')) return PERMISSION_CATEGORIES.PROJECT_MANAGEMENT;
   if (permission.startsWith('analytics.')) return PERMISSION_CATEGORIES.ANALYTICS;
-  if (permission.startsWith('settings.')) return PERMISSION_CATEGORIES.SETTINGS;
-  if (permission.startsWith('permissions.')) return PERMISSION_CATEGORIES.ROLE_MANAGEMENT;
+  if (permission.startsWith('settings.')) return PERMISSION_CATEGORIES.SETTINGS_MANAGEMENT; // Corrected
   return 'Other';
 }
 

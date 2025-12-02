@@ -2,12 +2,14 @@ import { NextRequest } from 'next/server';
 import { verifyAccessToken } from '@/lib/utils/jwt';
 import { getAccessToken } from '@/lib/utils/cookies';
 import { UnauthorizedError } from '@/lib/utils/errors';
+import AuthService from '@/lib/services/auth.service'; // Import AuthService
 
 export interface AuthenticatedRequest extends NextRequest {
   user?: {
     userId: string;
     email: string;
     roles: string[];
+    permissions: string[]; // Add permissions here
   };
 }
 
@@ -20,14 +22,51 @@ export async function authenticateRequest(request: NextRequest): Promise<Authent
 
   try {
     const payload = verifyAccessToken(token);
+    
+    // Fetch the full user object with populated roles and permissions
+    const user = await AuthService.getUserById(payload.userId);
+
+    if (!user) {
+      throw new UnauthorizedError('User not found');
+    }
+
+    // Extract permission names
+    const userPermissions = user.roles.flatMap((role: any) =>
+      role.permissions.map((p: any) => p.name)
+    );
+
     (request as AuthenticatedRequest).user = {
-      userId: payload.userId,
-      email: payload.email,
-      roles: payload.roles
+      userId: user._id.toString(),
+      email: user.email,
+      roles: user.roles.map((r: any) => r.name),
+      permissions: userPermissions, // Assign extracted permissions
     };
     return request as AuthenticatedRequest;
   } catch (error) {
     throw new UnauthorizedError('Invalid or expired token');
+  }
+}
+
+export async function authorizeRequest(
+  request: AuthenticatedRequest,
+  requiredPermissions: string[]
+): Promise<void> {
+  if (!request.user) {
+    throw new UnauthorizedError('Not authenticated');
+  }
+
+  if (requiredPermissions.length === 0) {
+    return; // No specific permissions required, allow access
+  }
+
+  const userPermissions = request.user.permissions;
+
+  const hasPermission = requiredPermissions.some(permission =>
+    userPermissions.includes(permission)
+  );
+
+  if (!hasPermission) {
+    throw new UnauthorizedError('Insufficient permissions');
   }
 }
 
