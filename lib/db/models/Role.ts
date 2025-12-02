@@ -47,10 +47,6 @@ const RoleSchema = new Schema<IRole>({
   timestamps: true
 });
 
-// Indexes
-RoleSchema.index({ name: 1 }, { unique: true });
-RoleSchema.index({ hierarchy: 1 });
-
 // Instance method: Check if this role can manage target role
 RoleSchema.methods.canManage = function(targetRole: IRole): boolean {
   return this.hierarchy < targetRole.hierarchy;

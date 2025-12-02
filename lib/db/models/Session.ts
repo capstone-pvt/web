@@ -41,8 +41,7 @@ const SessionSchema = new Schema<ISession>({
   },
   expiresAt: {
     type: Date,
-    required: true,
-    index: true
+    required: true
   }
 }, {
   timestamps: true

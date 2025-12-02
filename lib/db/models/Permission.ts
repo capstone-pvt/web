@@ -56,8 +56,6 @@ const PermissionSchema = new Schema<IPermission>({
 });
 
 // Indexes
-PermissionSchema.index({ name: 1 }, { unique: true });
 PermissionSchema.index({ resource: 1, action: 1 });
-PermissionSchema.index({ category: 1 });
 
 export default mongoose.models.Permission || mongoose.model<IPermission>('Permission', PermissionSchema);

@@ -16,7 +16,7 @@ export async function GET(
     const { id } = await params;
     const authRequest = await authenticateRequest(request);
 
-    // Users can view their own profile, or need users.read permission
+    // Users can view their own profile or need users.read permission
     if (authRequest.user!.userId !== id) {
       await requirePermission(authRequest, PERMISSIONS.USERS_READ);
     }

@@ -75,22 +75,19 @@ export async function logAuthenticatedAction(
 export async function logLogin(
   request: NextRequest,
   email: string,
-  success: boolean,
-  userId?: string,
-  errorMessage?: string
+  userId: string,
 ): Promise<void> {
   const deviceInfo = getDeviceInfo(request);
 
   await AuditLogService.log({
-    userId: userId || 'unknown',
+    userId: userId,
     userEmail: email,
     userName: email,
     action: 'auth.login',
     resource: 'auth',
     ipAddress: deviceInfo.ipAddress,
     userAgent: deviceInfo.userAgent,
-    status: success ? 'success' : 'failure',
-    errorMessage
+    status: 'success'
   });
 }
 

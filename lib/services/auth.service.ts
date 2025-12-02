@@ -5,6 +5,8 @@ import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '@
 import { UnauthorizedError, ConflictError } from '@/lib/utils/errors';
 import { LoginCredentials, RegisterData } from '@/types/auth.types';
 import bcrypt from 'bcryptjs';
+import '@/lib/db/models/Permission';
+import '@/lib/db/models/Role';
 
 class AuthService {
   async register(data: RegisterData): Promise<IUser> {
@@ -37,11 +39,6 @@ class AuthService {
     }
 
     await UserRepository.updateLastLogin(user._id.toString(), deviceInfo.ip);
-
-    await user.populate({
-      path: 'roles',
-      populate: { path: 'permissions' }
-    });
 
     const accessToken = generateAccessToken({
       userId: user._id.toString(),
@@ -99,11 +96,6 @@ class AuthService {
       throw new UnauthorizedError('User not found or inactive');
     }
 
-    await user.populate({
-      path: 'roles',
-      populate: { path: 'permissions' }
-    });
-
     const accessToken = generateAccessToken({
       userId: user._id.toString(),
       email: user.email,
@@ -120,12 +112,6 @@ class AuthService {
 
   async getUserById(userId: string): Promise<IUser | null> {
     const user = await UserRepository.findById(userId);
-    if (user) {
-      await user.populate({
-        path: 'roles',
-        populate: { path: 'permissions' }
-      });
-    }
     return user;
   }
 
