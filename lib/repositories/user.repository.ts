@@ -2,6 +2,7 @@ import User, { IUser } from '@/lib/db/models/User';
 import Role from '@/lib/db/models/Role';
 import connectDB from '@/lib/db/mongodb';
 import { CreateUserDTO, UpdateUserDTO, UserFilters } from '@/types/user.types';
+import { Types } from 'mongoose';
 
 class UserRepository {
   async create(data: CreateUserDTO): Promise<IUser> {
@@ -98,6 +99,16 @@ class UserRepository {
       path: 'roles',
       populate: { path: 'permissions' }
     });
+  }
+
+  async updateRoles(userId: string, roleIds: string[]): Promise<IUser | null> {
+    await connectDB();
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $set: { roles: roleIds.map(id => new Types.ObjectId(id)) } },
+      { new: true }
+    ).populate('roles');
+    return user;
   }
 
   async delete(id: string): Promise<boolean> {

@@ -34,25 +34,24 @@ class PermissionRepository {
 
   async getAllCategorized(): Promise<Record<string, IPermission[]>> {
     await connectDB();
-    const permissions = await Permission.find().sort({ category: 1, name: 1 });
-
+    const permissions = await this.findAll();
     const categorized: Record<string, IPermission[]> = {};
-    permissions.forEach(permission => {
-      if (!categorized[permission.category]) {
-        categorized[permission.category] = [];
+    permissions.forEach(p => {
+      if (!categorized[p.category]) {
+        categorized[p.category] = [];
       }
-      categorized[permission.category].push(permission);
+      categorized[p.category].push(p);
     });
-
     return categorized;
+  }
+
+  async update(id: string, data: Partial<IPermission>): Promise<IPermission | null> {
+    await connectDB();
+    return Permission.findByIdAndUpdate(id, data, { new: true });
   }
 
   async delete(id: string): Promise<boolean> {
     await connectDB();
-    const permission = await Permission.findById(id);
-    if (permission?.isSystemPermission) {
-      throw new Error('Cannot delete system permission');
-    }
     const result = await Permission.findByIdAndDelete(id);
     return !!result;
   }

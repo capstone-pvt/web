@@ -33,6 +33,7 @@ export const PERMISSIONS = {
 export const PERMISSION_CATEGORIES = {
   USER_MANAGEMENT: 'User Management',
   ROLE_MANAGEMENT: 'Role Management',
+  PERMISSION_MANAGEMENT: 'Permission Management',
   PROJECT_MANAGEMENT: 'Project Management',
   ANALYTICS: 'Analytics',
   SETTINGS: 'Settings'
