@@ -1,111 +1,193 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import axios from '@/lib/api/axios';
-import { IRole } from '@/lib/db/models/Role';
-import { IPermission } from '@/lib/db/models/Permission';
-import ProtectedRoute from '@/app/components/guards/ProtectedRoute';
 import { PERMISSIONS } from '@/config/permissions';
+import PermissionGate from '@/app/components/guards/PermissionGate';
 
-const RolesPage = () => {
-  const [roles, setRoles] = useState<IRole[]>([]);
-  const [permissions, setPermissions] = useState<IPermission[]>([]);
-  const [selectedRole, setSelectedRole] = useState<IRole | null>(null);
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+interface Permission {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string;
+  resource: string;
+  action: string;
+  category: string;
+}
+
+interface Role {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string;
+  hierarchy: number;
+  permissions: Permission[];
+  userCount?: number;
+}
+
+export default function RolesPage() {
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedRole, setExpandedRole] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const [rolesRes, permissionsRes] = await Promise.all([
-        axios.get('/api/roles'),
-        axios.get('/api/permissions'),
-      ]);
-      setRoles(rolesRes.data.data.roles);
-      setPermissions(permissionsRes.data.data.permissions);
-    };
-    fetchData();
+    fetchRoles();
   }, []);
 
-  const handleRoleSelect = (role: IRole) => {
-    setSelectedRole(role);
-    setSelectedPermissions(role.permissions.map((p) => p.toString()));
-  };
-
-  const handlePermissionChange = (permissionId: string) => {
-    setSelectedPermissions((prev) =>
-      prev.includes(permissionId)
-        ? prev.filter((p) => p !== permissionId)
-        : [...prev, permissionId]
-    );
-  };
-
-  const handleSaveChanges = async () => {
-    if (!selectedRole) return;
+  const fetchRoles = async () => {
     try {
-      await axios.put(`/api/roles/${selectedRole._id}`, {
-        permissions: selectedPermissions,
-      });
-      // Refresh roles data
-      const rolesRes = await axios.get('/api/roles');
-      setRoles(rolesRes.data.data.roles);
+      setLoading(true);
+      const response = await axios.get('/api/roles');
+      if (response.data.success) {
+        setRoles(response.data.data.roles);
+      }
     } catch (error) {
-      console.error('Failed to update role', error);
+      console.error('Error fetching roles:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const toggleExpanded = (roleId: string) => {
+    setExpandedRole(expandedRole === roleId ? null : roleId);
+  };
+
+  const groupPermissionsByCategory = (permissions: Permission[]) => {
+    return permissions.reduce((acc, perm) => {
+      if (!acc[perm.category]) {
+        acc[perm.category] = [];
+      }
+      acc[perm.category].push(perm);
+      return acc;
+    }, {} as Record<string, Permission[]>);
+  };
+
   return (
-    <ProtectedRoute permissions={[PERMISSIONS.ROLES_READ, PERMISSIONS.ROLES_UPDATE]}>
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Roles and Permissions</h1>
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <h2 className="text-xl font-semibold">Roles</h2>
-            <ul>
-              {roles.map((role) => (
-                <li
-                  key={role._id.toString()}
-                  className={`cursor-pointer p-2 ${
-                    selectedRole?._id === role._id ? 'bg-blue-500 text-white' : ''
-                  }`}
-                  onClick={() => handleRoleSelect(role)}
+    <PermissionGate permission={PERMISSIONS.ROLES_READ}>
+      <div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Role Management
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            View and manage system roles and permissions
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {loading ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+              <p className="text-gray-500 dark:text-gray-400">Loading roles...</p>
+            </div>
+          ) : roles.length === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+              <p className="text-gray-500 dark:text-gray-400">No roles found</p>
+            </div>
+          ) : (
+            roles.map((role) => {
+              const isExpanded = expandedRole === role.id;
+              const groupedPermissions = groupPermissionsByCategory(role.permissions);
+
+              return (
+                <div
+                  key={role.id}
+                  className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden"
                 >
-                  {role.name}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="col-span-2">
-            {selectedRole && (
-              <>
-                <h2 className="text-xl font-semibold">
-                  Permissions for {selectedRole.name}
-                </h2>
-                <div className="grid grid-cols-2 gap-2">
-                  {permissions.map((permission) => (
-                    <div key={permission._id.toString()}>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={selectedPermissions.includes(permission._id.toString())}
-                          onChange={() => handlePermissionChange(permission._id.toString())}
-                        />
-                        {permission.name}
-                      </label>
+                  <div
+                    className="p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    onClick={() => toggleExpanded(role.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            {role.displayName}
+                          </h3>
+                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            Hierarchy: {role.hierarchy}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          {role.description}
+                        </p>
+                        <div className="flex items-center gap-4 mt-2 text-sm">
+                          <span className="text-gray-500 dark:text-gray-400">
+                            {role.permissions.length} permissions
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <svg
+                          className={`w-6 h-6 text-gray-400 transition-transform ${
+                            isExpanded ? 'transform rotate-180' : ''
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+
+                  {isExpanded && (
+                    <div className="border-t border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-750">
+                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                        Permissions by Category
+                      </h4>
+                      <div className="space-y-4">
+                        {Object.entries(groupedPermissions).map(([category, perms]) => (
+                          <div key={category}>
+                            <h5 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                              {category}
+                            </h5>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                              {perms.map((perm) => (
+                                <div
+                                  key={perm.id}
+                                  className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600"
+                                >
+                                  <svg
+                                    className="w-4 h-4 text-green-500 flex-shrink-0"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M5 13l4 4L19 7"
+                                    />
+                                  </svg>
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                      {perm.displayName}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                      {perm.name}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <button
-                  className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                  onClick={handleSaveChanges}
-                >
-                  Save Changes
-                </button>
-              </>
-            )}
-          </div>
+              );
+            })
+          )}
         </div>
       </div>
-    </ProtectedRoute>
+    </PermissionGate>
   );
-};
-
-export default RolesPage;
+}

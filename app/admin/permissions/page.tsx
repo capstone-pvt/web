@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from '@/lib/api/axios';
 import { IPermission } from '@/lib/db/models/Permission';
-import ProtectedRoute from '@/app/components/guards/ProtectedRoute';
+import PermissionGate from '@/app/components/guards/PermissionGate';
 import { PERMISSIONS } from '@/config/permissions';
 
 const PermissionsPage = () => {
@@ -53,7 +53,7 @@ const PermissionsPage = () => {
   };
 
   return (
-    <ProtectedRoute permissions={[PERMISSIONS.PERMISSIONS_MANAGE]}>
+    <PermissionGate permission={PERMISSIONS.PERMISSIONS_MANAGE}>
       <div className="container mx-auto p-4">
         <h1 className="text-2xl font-bold mb-4">Permissions</h1>
 
@@ -95,7 +95,7 @@ const PermissionsPage = () => {
                         setEditingPermission({
                           ...editingPermission,
                           [key]: e.target.value,
-                        })
+                        } as IPermission)
                       }
                       className="p-2 border"
                     />
@@ -125,7 +125,7 @@ const PermissionsPage = () => {
           ))}
         </div>
       </div>
-    </ProtectedRoute>
+    </PermissionGate>
   );
 };
 

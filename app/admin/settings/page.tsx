@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from '@/lib/api/axios';
 import { ISetting } from '@/lib/db/models/Setting';
-import ProtectedRoute from '@/app/components/guards/ProtectedRoute';
+import PermissionGate from '@/app/components/guards/PermissionGate';
 import { PERMISSIONS } from '@/config/permissions';
 
 const SettingsPage = () => {
@@ -45,7 +45,7 @@ const SettingsPage = () => {
   }
 
   return (
-    <ProtectedRoute permissions={[PERMISSIONS.SETTINGS_MANAGE]}>
+    <PermissionGate permission={PERMISSIONS.SETTINGS_MANAGE}>
       <div className="container mx-auto p-4">
         <h1 className="text-2xl font-bold mb-4">Application Settings</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -161,7 +161,7 @@ const SettingsPage = () => {
           </button>
         </form>
       </div>
-    </ProtectedRoute>
+    </PermissionGate>
   );
 };
 

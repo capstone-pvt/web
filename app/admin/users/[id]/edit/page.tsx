@@ -113,7 +113,7 @@ export default function EditUserPage() {
 
       const response = await axios.patch(`/api/users/${userId}`, updateData);
       if (response.data.success) {
-        router.push('/dashboard/users');
+        router.push('/admin/users');
       }
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to update user');

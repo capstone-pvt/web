@@ -65,7 +65,7 @@ export default function CreateUserPage() {
     try {
       const response = await axios.post('/api/users', formData);
       if (response.data.success) {
-        router.push('/dashboard/users');
+        router.push('/admin/users');
       }
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to create user');

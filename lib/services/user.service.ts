@@ -22,7 +22,7 @@ class UserService {
     return UserRepository.findById(id);
   }
 
-  async getAllUsers(filters: UserFilters): Promise<{ users: IUser[]; total: number }> {
+  async getAllUsers(filters: UserFilters): Promise<{ users: IUser[]; totalPages: number }> {
     return UserRepository.findAll(filters);
   }
 
