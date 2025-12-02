@@ -15,7 +15,7 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
 
     // If 401 and not a retry or refresh request, try refreshing
-    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/refresh')) {
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/refresh') && !originalRequest.url?.includes('/me')) {
       originalRequest._retry = true;
 
       try {

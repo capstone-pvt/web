@@ -11,7 +11,7 @@ export default function PermissionGate({
   permission,
   children,
   fallback = null
-}: PermissionGateProps) {
+}: Readonly<PermissionGateProps>) {
   const hasPermission = usePermission(permission);
 
   if (!hasPermission) {

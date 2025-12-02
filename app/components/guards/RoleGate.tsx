@@ -12,7 +12,7 @@ export default function RoleGate({
   role,
   children,
   fallback = null
-}: RoleGateProps) {
+}: Readonly<RoleGateProps>) {
   const hasRole = useRole(role);
 
   if (!hasRole) {
