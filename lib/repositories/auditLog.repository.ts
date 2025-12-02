@@ -94,19 +94,32 @@ class AuditLogRepository {
         .sort({ timestamp: -1 })
         .skip(skip)
         .limit(limit)
-        .lean(),
+        .lean()
+        .exec(),
       AuditLog.countDocuments(query)
     ]);
 
-    return { logs: logs as IAuditLog[], total };
+    return {
+      logs: logs.map(log => ({
+        ...log,
+        _id: log._id.toString()
+      })) as unknown as IAuditLog[],
+      total
+    };
   }
 
   async findByUserId(userId: string, limit: number = 100): Promise<IAuditLog[]> {
     await connectDB();
-    return AuditLog.find({ userId })
+    const logs = await AuditLog.find({ userId })
       .sort({ timestamp: -1 })
       .limit(limit)
-      .lean() as Promise<IAuditLog[]>;
+      .lean()
+      .exec();
+
+    return logs.map(log => ({
+      ...log,
+      _id: log._id.toString()
+    })) as unknown as IAuditLog[];
   }
 
   async findByResource(resource: string, resourceId?: string, limit: number = 100): Promise<IAuditLog[]> {
@@ -115,18 +128,30 @@ class AuditLogRepository {
     if (resourceId) {
       query.resourceId = resourceId;
     }
-    return AuditLog.find(query)
+    const logs = await AuditLog.find(query)
       .sort({ timestamp: -1 })
       .limit(limit)
-      .lean() as Promise<IAuditLog[]>;
+      .lean()
+      .exec();
+
+    return logs.map(log => ({
+      ...log,
+      _id: log._id.toString()
+    })) as unknown as IAuditLog[];
   }
 
   async getRecentActivity(limit: number = 100): Promise<IAuditLog[]> {
     await connectDB();
-    return AuditLog.find()
+    const logs = await AuditLog.find()
       .sort({ timestamp: -1 })
       .limit(limit)
-      .lean() as Promise<IAuditLog[]>;
+      .lean()
+      .exec();
+
+    return logs.map(log => ({
+      ...log,
+      _id: log._id.toString()
+    })) as unknown as IAuditLog[];
   }
 
   async getStatistics(filters?: {

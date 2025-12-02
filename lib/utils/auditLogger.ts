@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import AuditLogService from '../services/auditLog.service';
-import { AuthenticatedRequest } from '../../types/api.types';
+import { AuthenticatedRequest } from '../middleware/auth.middleware';
 
 /**
  * Extract IP address from request
