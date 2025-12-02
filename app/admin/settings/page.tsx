@@ -10,15 +10,15 @@ const SettingsPage = () => {
   const [settings, setSettings] = useState<ISetting | null>(null);
   const [formData, setFormData] = useState<Partial<ISetting>>({});
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
   const fetchSettings = async () => {
     const res = await axios.get('/api/settings');
     setSettings(res.data.data.settings);
     setFormData(res.data.data.settings || {});
   };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
