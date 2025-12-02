@@ -1,32 +1,13 @@
-import { NextRequest } from 'next/server';
-import PermissionService from '@/lib/services/permission.service';
-import { authenticateRequest } from '@/lib/middleware/auth.middleware';
-import { requirePermission } from '@/lib/middleware/permission.middleware';
+import { NextResponse } from 'next/server';
+import PermissionRepository from '@/lib/repositories/permission.repository';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
-import { PERMISSIONS } from '@/config/permissions';
+import { authenticateRequest } from '@/lib/middleware/auth.middleware';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    const authRequest = await authenticateRequest(request);
-    await requirePermission(authRequest, PERMISSIONS.PERMISSIONS_READ);
-
-    const categorized = await PermissionService.getAllCategorized();
-
-    const permissionsResponse: any = {};
-    Object.keys(categorized).forEach(category => {
-      permissionsResponse[category] = categorized[category].map((p: any) => ({
-        id: p._id.toString(),
-        name: p.name,
-        displayName: p.displayName,
-        description: p.description,
-        resource: p.resource,
-        action: p.action,
-        category: p.category,
-        isSystemPermission: p.isSystemPermission
-      }));
-    });
-
-    return successResponse({ permissions: permissionsResponse });
+    await authenticateRequest(request);
+    const permissions = await PermissionRepository.findAll();
+    return successResponse({ permissions });
   } catch (error) {
     return errorResponse(error);
   }

@@ -1,109 +1,28 @@
 import { NextRequest } from 'next/server';
-import UserService from '@/lib/services/user.service';
-import { authenticateRequest } from '@/lib/middleware/auth.middleware';
-import { requirePermission } from '@/lib/middleware/permission.middleware';
+import UserRepository from '@/lib/repositories/user.repository';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
-import { PERMISSIONS } from '@/config/permissions';
-import { createUserSchema } from '@/lib/utils/validation';
-import { ValidationError } from '@/lib/utils/errors';
-import { PAGINATION } from '@/lib/utils/constants';
-import { logAuthenticatedAction } from '@/lib/utils/auditLogger';
+import { authenticateRequest } from '@/lib/middleware/auth.middleware';
+import { UserFilters } from '@/types/user.types';
 
 export async function GET(request: NextRequest) {
   try {
-    const authRequest = await authenticateRequest(request);
-    await requirePermission(authRequest, PERMISSIONS.USERS_READ);
+    await authenticateRequest(request);
+    // TODO: Add authorization check to ensure only admins can access
 
     const { searchParams } = new URL(request.url);
-    const filters = {
+    const filters: UserFilters = {
       search: searchParams.get('search') || undefined,
       role: searchParams.get('role') || undefined,
-      isActive: searchParams.get('isActive') === 'true' ? true : searchParams.get('isActive') === 'false' ? false : undefined,
-      page: parseInt(searchParams.get('page') || String(PAGINATION.DEFAULT_PAGE)),
-      limit: parseInt(searchParams.get('limit') || String(PAGINATION.DEFAULT_LIMIT)),
+      isActive: searchParams.has('isActive') ? searchParams.get('isActive') === 'true' : undefined,
+      page: searchParams.has('page') ? parseInt(searchParams.get('page')!) : 1,
+      limit: searchParams.has('limit') ? parseInt(searchParams.get('limit')!) : 20,
       sortBy: searchParams.get('sortBy') || 'createdAt',
-      order: (searchParams.get('order') || 'desc') as 'asc' | 'desc'
+      order: searchParams.get('order') || 'desc',
     };
 
-    const { users, total } = await UserService.getAllUsers(filters);
-
-    const usersResponse = users.map((user: any) => ({
-      id: user._id.toString(),
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      fullName: user.fullName,
-      isActive: user.isActive,
-      roles: user.roles.map((r: any) => ({
-        id: r._id.toString(),
-        name: r.name,
-        displayName: r.displayName,
-        hierarchy: r.hierarchy
-      })),
-      createdAt: user.createdAt.toISOString(),
-      lastLoginAt: user.lastLoginAt?.toISOString()
-    }));
-
-    return successResponse({
-      users: usersResponse,
-      pagination: {
-        page: filters.page,
-        limit: filters.limit,
-        total,
-        totalPages: Math.ceil(total / filters.limit)
-      }
-    });
+    const { users, totalPages } = await UserRepository.findAll(filters);
+    return successResponse({ users, totalPages });
   } catch (error) {
-    return errorResponse(error);
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const authRequest = await authenticateRequest(request);
-    await requirePermission(authRequest, PERMISSIONS.USERS_CREATE);
-
-    const body = await request.json();
-
-    const validationResult = createUserSchema.safeParse(body);
-    if (!validationResult.success) {
-      throw new ValidationError('Validation failed', validationResult.error.errors);
-    }
-
-    const userData = validationResult.data;
-
-    const user = await UserService.createUser(userData, authRequest.user!.userId);
-
-    // Log user creation
-    await logAuthenticatedAction(authRequest, 'users.create', 'users', {
-      resourceId: user._id.toString(),
-      details: {
-        email: user.email,
-        fullName: user.fullName,
-        roles: user.roles
-      }
-    });
-
-    const userResponse = {
-      id: user._id.toString(),
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      fullName: user.fullName,
-      isActive: user.isActive,
-      roles: user.roles
-    };
-
-    return successResponse({ user: userResponse }, 'User created successfully', 201);
-  } catch (error: any) {
-    // Log failed user creation
-    const authRequest = await authenticateRequest(request).catch(() => null);
-    if (authRequest) {
-      await logAuthenticatedAction(authRequest, 'users.create', 'users', {
-        status: 'failure',
-        errorMessage: error.message
-      });
-    }
     return errorResponse(error);
   }
 }

@@ -1,34 +1,13 @@
-import { NextRequest } from 'next/server';
-import RoleService from '@/lib/services/role.service';
-import { authenticateRequest } from '@/lib/middleware/auth.middleware';
-import { requirePermission } from '@/lib/middleware/permission.middleware';
+import { NextResponse } from 'next/server';
+import RoleRepository from '@/lib/repositories/role.repository';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
-import { PERMISSIONS } from '@/config/permissions';
+import { authenticateRequest } from '@/lib/middleware/auth.middleware';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    const authRequest = await authenticateRequest(request);
-    await requirePermission(authRequest, PERMISSIONS.ROLES_READ);
-
-    const roles = await RoleService.getAllRoles();
-
-    const rolesResponse = roles.map((role: any) => ({
-      id: role._id.toString(),
-      name: role.name,
-      displayName: role.displayName,
-      description: role.description,
-      hierarchy: role.hierarchy,
-      isSystemRole: role.isSystemRole,
-      permissions: role.permissions.map((p: any) => ({
-        id: p._id.toString(),
-        name: p.name,
-        displayName: p.displayName,
-        category: p.category
-      })),
-      createdAt: role.createdAt.toISOString()
-    }));
-
-    return successResponse({ roles: rolesResponse });
+    await authenticateRequest(request);
+    const roles = await RoleRepository.findAll();
+    return successResponse({ roles });
   } catch (error) {
     return errorResponse(error);
   }

@@ -43,7 +43,7 @@ class UserRepository {
     return User.findOne({ email }).select('+password').populate('roles');
   }
 
-  async findAll(filters: UserFilters = {}): Promise<{ users: IUser[]; total: number }> {
+  async findAll(filters: UserFilters = {}): Promise<{ users: IUser[]; totalPages: number }> {
     await connectDB();
 
     const {
@@ -89,7 +89,7 @@ class UserRepository {
       );
     }
 
-    return { users: filteredUsers, total };
+    return { users: filteredUsers, totalPages: Math.ceil(total / limit) };
   }
 
   async update(id: string, data: UpdateUserDTO): Promise<IUser | null> {
