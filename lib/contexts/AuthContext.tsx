@@ -35,7 +35,9 @@ export function AuthProvider({ children }: Readonly<{
     try {
       const response = await axios.post('/api/auth/login', credentials);
       if (response.data.success) {
-        setUser(response.data.data.user);
+        // After successful login and cookies are set, refresh the user data
+        // This will update the AuthContext state with the latest user and permissions
+        await refreshUser(); 
         router.push('/dashboard');
       }
     } catch (error: any) {
@@ -68,7 +70,6 @@ export function AuthProvider({ children }: Readonly<{
 
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
-    // Now user.permissions is an array of strings, so we check directly
     return user.permissions.includes(permission);
   };
 
