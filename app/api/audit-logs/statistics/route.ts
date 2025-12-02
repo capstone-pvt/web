@@ -3,7 +3,7 @@ import { authenticateRequest } from '@/lib/middleware/auth.middleware';
 import { requirePermission } from '@/lib/middleware/permission.middleware';
 import { PERMISSIONS } from '@/config/permissions';
 import AuditLogService from '@/lib/services/auditLog.service';
-import { successResponse } from '@/lib/utils/apiResponse';
+import { successResponse } from '@/lib/utils/api-response';
 import { handleApiError } from '@/lib/utils/errors';
 
 export async function GET(request: NextRequest) {

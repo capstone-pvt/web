@@ -10,17 +10,18 @@ import { logAuthenticatedAction } from '@/lib/utils/auditLogger';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const authRequest = await authenticateRequest(request);
 
     // Users can view their own profile, or need users.read permission
-    if (authRequest.user!.userId !== params.id) {
+    if (authRequest.user!.userId !== id) {
       await requirePermission(authRequest, PERMISSIONS.USERS_READ);
     }
 
-    const user = await UserService.getUserById(params.id);
+    const user = await UserService.getUserById(id);
 
     if (!user) {
       return errorResponse(new Error('User not found'));
@@ -53,9 +54,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const authRequest = await authenticateRequest(request);
 
     const body = await request.json();
@@ -67,11 +69,11 @@ export async function PATCH(
 
     const userData = validationResult.data;
 
-    const user = await UserService.updateUser(params.id, userData, authRequest.user!.userId);
+    const user = await UserService.updateUser(id, userData, authRequest.user!.userId);
 
     // Log user update
     await logAuthenticatedAction(authRequest, 'users.update', 'users', {
-      resourceId: params.id,
+      resourceId: id,
       details: {
         updatedFields: Object.keys(userData),
         email: user.email,
@@ -97,10 +99,11 @@ export async function PATCH(
     return successResponse({ user: userResponse }, 'User updated successfully');
   } catch (error: any) {
     // Log failed user update
+    const { id } = await params;
     const authRequest = await authenticateRequest(request).catch(() => null);
     if (authRequest) {
       await logAuthenticatedAction(authRequest, 'users.update', 'users', {
-        resourceId: params.id,
+        resourceId: id,
         status: 'failure',
         errorMessage: error.message
       });
@@ -111,20 +114,21 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const authRequest = await authenticateRequest(request);
     await requirePermission(authRequest, PERMISSIONS.USERS_DELETE);
 
     // Get user info before deletion for logging
-    const userToDelete = await UserService.getUserById(params.id);
+    const userToDelete = await UserService.getUserById(id);
 
-    await UserService.deleteUser(params.id, authRequest.user!.userId);
+    await UserService.deleteUser(id, authRequest.user!.userId);
 
     // Log user deletion
     await logAuthenticatedAction(authRequest, 'users.delete', 'users', {
-      resourceId: params.id,
+      resourceId: id,
       details: {
         deletedUser: {
           email: userToDelete?.email,
@@ -136,10 +140,11 @@ export async function DELETE(
     return successResponse(null, 'User deleted successfully');
   } catch (error: any) {
     // Log failed user deletion
+    const { id } = await params;
     const authRequest = await authenticateRequest(request).catch(() => null);
     if (authRequest) {
       await logAuthenticatedAction(authRequest, 'users.delete', 'users', {
-        resourceId: params.id,
+        resourceId: id,
         status: 'failure',
         errorMessage: error.message
       });

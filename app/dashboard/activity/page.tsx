@@ -35,24 +35,25 @@ export default function ActivityPage() {
   const [statistics, setStatistics] = useState<ActivityStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
-  const [filter, setFilter] = useState({
-    resource: '',
-    status: '',
-    limit: 50
-  });
+  const [resourceFilter, setResourceFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [limitFilter, setLimitFilter] = useState(50);
 
   useEffect(() => {
     fetchRecentActivity();
+  }, [resourceFilter, statusFilter, limitFilter]);
+
+  useEffect(() => {
     fetchStatistics();
-  }, [filter]);
+  }, []);
 
   const fetchRecentActivity = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
-        limit: filter.limit.toString(),
-        ...(filter.resource && { resource: filter.resource }),
-        ...(filter.status && { status: filter.status })
+        limit: limitFilter.toString(),
+        ...(resourceFilter && { resource: resourceFilter }),
+        ...(statusFilter && { status: statusFilter })
       });
       const response = await axios.get(`/api/audit-logs?${params}`);
       if (response.data.success) {
@@ -195,8 +196,8 @@ export default function ActivityPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <select
-              value={filter.resource}
-              onChange={(e) => setFilter({ ...filter, resource: e.target.value })}
+              value={resourceFilter}
+              onChange={(e) => setResourceFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             >
               <option value="">All Resources</option>
@@ -207,8 +208,8 @@ export default function ActivityPage() {
               <option value="settings">Settings</option>
             </select>
             <select
-              value={filter.status}
-              onChange={(e) => setFilter({ ...filter, status: e.target.value })}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             >
               <option value="">All Status</option>
@@ -216,8 +217,8 @@ export default function ActivityPage() {
               <option value="failure">Failure</option>
             </select>
             <select
-              value={filter.limit}
-              onChange={(e) => setFilter({ ...filter, limit: parseInt(e.target.value) })}
+              value={limitFilter}
+              onChange={(e) => setLimitFilter(parseInt(e.target.value))}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             >
               <option value="25">Last 25</option>

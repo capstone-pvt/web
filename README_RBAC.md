@@ -183,7 +183,7 @@ types/                     # TypeScript definitions
 
 **1. Middleware (Route Level)**
 ```typescript
-// middleware.ts protects entire routes
+// proxy.ts protects entire routes
 if (pathname.startsWith('/dashboard')) {
   // Check auth token
 }

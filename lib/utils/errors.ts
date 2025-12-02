@@ -52,3 +52,11 @@ export class RateLimitError extends AppError {
     this.name = 'RateLimitError';
   }
 }
+
+// Helper for API routes to convert thrown errors to standardized NextResponse
+import { NextResponse } from 'next/server';
+import { errorResponse } from './api-response';
+
+export function handleApiError(error: unknown): NextResponse {
+  return errorResponse(error);
+}
