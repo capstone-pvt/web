@@ -1,7 +1,7 @@
 import { Permission } from './permission.types';
 
 export interface Role {
-  id: string;
+  _id: string;
   name: string;
   displayName: string;
   description: string;

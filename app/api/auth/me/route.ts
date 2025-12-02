@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     );
 
     const userResponse = {
-      id: user._id.toString(),
+      _id: user._id.toString(),
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       isActive: user.isActive,
       lastLoginAt: user.lastLoginAt?.toISOString(),
       roles: user.roles.map((r: any) => ({
-        id: r._id.toString(),
+        _id: r._id.toString(),
         name: r.name,
         displayName: r.displayName,
         description: r.description,

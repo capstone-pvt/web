@@ -15,13 +15,13 @@ export interface RegisterData {
 }
 
 export interface AuthUser {
-  id: string;
+  _id: string;
   email: string;
   firstName: string;
   lastName: string;
   fullName: string;
   roles: Role[];
-  permissions: string[]; // Changed from Permission[] to string[]
+  permissions: string[];
   isActive: boolean;
   lastLoginAt?: string;
 }

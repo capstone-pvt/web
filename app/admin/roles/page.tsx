@@ -13,7 +13,6 @@ import {
 
 interface Permission {
   _id: string;
-  id: string;
   name: string;
   displayName: string;
   description: string;
@@ -24,7 +23,6 @@ interface Permission {
 
 interface Role {
   _id: string;
-  id:string;
   name: string;
   displayName: string;
   description: string;

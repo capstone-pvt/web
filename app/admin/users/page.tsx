@@ -26,13 +26,13 @@ import { PlusIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
 import { toast } from 'sonner';
 
 interface User {
-  id: string;
+  _id: string;
   email: string;
   firstName: string;
   lastName: string;
   fullName: string;
   isActive: boolean;
-  roles: Array<{ id: string; name: string; displayName: string }>;
+  roles: Array<{ _id: string; name: string; displayName: string }>;
   createdAt: string;
   lastLoginAt?: string;
 }
@@ -136,7 +136,7 @@ export default function UsersPage() {
       render: (_: any, user: User) => (
         <div className="flex justify-end gap-2">
           <PermissionGate permission={PERMISSIONS.USERS_UPDATE}>
-            <Link href={`/admin/users/${user.id}/edit`}>
+            <Link href={`/admin/users/${user._id}/edit`}>
               <Button variant="ghost" size="sm">
                 <Pencil1Icon className="h-4 w-4" />
               </Button>
@@ -146,7 +146,7 @@ export default function UsersPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleDelete(user.id)}
+              onClick={() => handleDelete(user._id)}
             >
               <TrashIcon className="h-4 w-4 text-destructive" />
             </Button>

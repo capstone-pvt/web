@@ -7,19 +7,19 @@ import { PERMISSIONS } from '@/config/permissions';
 import PermissionGate from '@/app/components/guards/PermissionGate';
 
 interface Role {
-  id: string;
+  _id: string;
   name: string;
   displayName: string;
   hierarchy: number;
 }
 
 interface User {
-  id: string;
+  _id: string;
   email: string;
   firstName: string;
   lastName: string;
   isActive: boolean;
-  roles: Array<{ id: string; name: string; displayName: string }>;
+  roles: Array<{ _id: string; name: string; displayName: string }>;
 }
 
 export default function EditUserPage() {
@@ -60,7 +60,7 @@ export default function EditUserPage() {
           email: userData.email,
           firstName: userData.firstName,
           lastName: userData.lastName,
-          roles: userData.roles.map((r: any) => r.id),
+          roles: userData.roles.map((r: any) => r._id),
           isActive: userData.isActive,
           password: ''
         });
@@ -222,11 +222,11 @@ export default function EditUserPage() {
               </label>
               <div className="space-y-2">
                 {roles.map((role) => (
-                  <label key={role.id} className="flex items-center">
+                  <label key={role._id} className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={formData.roles.includes(role.id)}
-                      onChange={() => handleRoleToggle(role.id)}
+                      checked={formData.roles.includes(role._id)}
+                      onChange={() => handleRoleToggle(role._id)}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">

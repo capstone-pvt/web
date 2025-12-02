@@ -40,15 +40,15 @@ const PermissionsPage = () => {
     });
   };
 
-  const handleUpdate = async (id: string) => {
+  const handleUpdate = async (_id: string) => {
     if (!editingPermission) return;
-    await axios.put(`/api/permissions/${id}`, editingPermission);
+    await axios.put(`/api/permissions/${_id}`, editingPermission);
     fetchPermissions();
     setEditingPermission(null);
   };
 
-  const handleDelete = async (id: string) => {
-    await axios.delete(`/api/permissions/${id}`);
+  const handleDelete = async (_id: string) => {
+    await axios.delete(`/api/permissions/${_id}`);
     fetchPermissions();
   };
 
