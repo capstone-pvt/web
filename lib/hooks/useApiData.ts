@@ -1,79 +1,51 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from '@/lib/api/axios';
 import { ApiState } from '@/types/ui.types';
 
 interface UseApiDataOptions<T = unknown> {
-  autoFetch?: boolean;
   onSuccess?: (data: T) => void;
   onError?: (error: string) => void;
 }
 
 export function useApiData<T>(
+  queryKey: string | (string | number)[],
   url: string,
   options: UseApiDataOptions<T> = {}
 ): ApiState<T> & {
-  refetch: () => Promise<void>;
+  refetch: () => void;
   setData: (data: T | null) => void;
 } {
-  const { autoFetch = true, onSuccess, onError } = options;
+  const queryClient = useQueryClient();
+  const { onSuccess, onError } = options;
 
-  const [state, setState] = useState<ApiState<T>>({
-    data: null,
-    loading: autoFetch,
-    error: null,
-  });
-
-  const fetchData = useCallback(async () => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
-
-    try {
+  const { data, error, isLoading, refetch } = useQuery<T, Error>({
+    queryKey: Array.isArray(queryKey) ? queryKey : [queryKey],
+    queryFn: async () => {
       const response = await axios.get(url);
-      const data = response.data.success ? response.data.data : response.data;
-
-      setState({ data, loading: false, error: null });
-      onSuccess?.(data);
-    } catch (error) {
-      const axiosError = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      return response.data.success ? response.data.data : response.data;
+    },
+    onSuccess,
+    onError: (err) => {
+      const axiosError = err as { response?: { data?: { error?: { message?: string } } }; message?: string };
       const errorMessage =
         axiosError.response?.data?.error?.message ||
         axiosError.message ||
         'An error occurred';
-
-      setState({ data: null, loading: false, error: errorMessage });
       onError?.(errorMessage);
-    }
-  }, [url, onSuccess, onError]);
+    },
+  });
 
-  useEffect(() => {
-    if (autoFetch) {
-      const doFetch = async () => {
-        setState((prev) => ({ ...prev, loading: true, error: null }));
-        try {
-          const response = await axios.get(url);
-          const data = response.data.success ? response.data.data : response.data;
-          setState({ data, loading: false, error: null });
-          onSuccess?.(data);
-        } catch (error) {
-          const axiosError = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
-          const errorMessage =
-            axiosError.response?.data?.error?.message ||
-            axiosError.message ||
-            'An error occurred';
-          setState({ data: null, loading: false, error: errorMessage });
-          onError?.(errorMessage);
-        }
-      };
-      doFetch();
-    }
-  }, [autoFetch, url, onSuccess, onError]);
-
-  const setData = useCallback((data: T | null) => {
-    setState((prev) => ({ ...prev, data }));
-  }, []);
+  const setData = (newData: T | null) => {
+    queryClient.setQueryData(Array.isArray(queryKey) ? queryKey : [queryKey], newData);
+  };
 
   return {
-    ...state,
-    refetch: fetchData,
+    data: data ?? null,
+    loading: isLoading,
+    error: error?.message ?? null,
+    refetch: () => {
+      refetch();
+    },
     setData,
   };
 }
