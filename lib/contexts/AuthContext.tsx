@@ -15,6 +15,7 @@ export function AuthProvider({ children }: Readonly<{
   const router = useRouter();
 
   const refreshUser = useCallback(async () => {
+    setIsLoading(true);
     try {
       const { user: userData } = await authApi.me();
       // Transform API User to AuthUser by adding fullName
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: Readonly<{
   }, [refreshUser]);
 
   const login = async (credentials: LoginCredentials) => {
+    setIsLoading(true);
     try {
       await authApi.login(credentials);
       // After successful login and cookies are set, refresh the user data
@@ -43,6 +45,7 @@ export function AuthProvider({ children }: Readonly<{
       router.push('/dashboard');
     } catch (err) {
       const error = err as Error;
+      setIsLoading(false);
       throw new Error(error.message || 'Login failed');
     }
   };

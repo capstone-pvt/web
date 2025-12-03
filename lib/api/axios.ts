@@ -13,31 +13,27 @@ interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
+const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+  baseURL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add auth token
-axiosInstance.interceptors.request.use(
-  (config) => {
-    // Cookies are sent automatically with withCredentials: true
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// A separate instance for token refresh to avoid interceptor recursion
+const axiosRefreshInstance = axios.create({
+  baseURL,
+  withCredentials: true,
+});
 
 // Response interceptor for data unwrapping and token refresh
 axiosInstance.interceptors.response.use(
   (response) => {
     // Unwrap the NestJS API response format
     if (response.data && typeof response.data === 'object' && 'success' in response.data) {
-      // Return the data property for easier access
       return {
         ...response,
         data: response.data.data ?? response.data,
@@ -48,25 +44,24 @@ axiosInstance.interceptors.response.use(
   async (error: AxiosError<ApiResponse>) => {
     const originalRequest = error.config as ExtendedAxiosRequestConfig;
 
-    // If 401 and not a retry or refresh request, try refreshing
+    // Only try to refresh on 401 errors for non-auth-related endpoints
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes('/auth/refresh') &&
-      !originalRequest.url?.includes('/auth/me')
+      originalRequest.url &&
+      !originalRequest.url.includes('/auth/login') &&
+      !originalRequest.url.includes('/auth/refresh') &&
+      !originalRequest.url.includes('/auth/me')
     ) {
       originalRequest._retry = true;
 
       try {
-        // Call the NestJS refresh endpoint
-        await axiosInstance.post('/auth/refresh');
-        // Retry the original request
+        // Use the clean instance to refresh the token
+        await axiosRefreshInstance.post('/auth/refresh');
+        // Retry the original request with the main instance
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, redirect to login
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
+        // If refresh fails, just reject the promise. The UI will handle it.
         return Promise.reject(refreshError);
       }
     }
