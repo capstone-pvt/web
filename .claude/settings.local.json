@@ -4,7 +4,10 @@
       "Bash(cat:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run lint:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(curl:*)",
+      "Bash(npm run start:dev:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []
