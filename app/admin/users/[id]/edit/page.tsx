@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import axios from '@/lib/api/axios';
+import axiosInstance from '@/lib/api/axios';
 import { PERMISSIONS } from '@/config/permissions';
 import PermissionGate from '@/app/components/guards/PermissionGate';
 
@@ -59,26 +59,23 @@ export default function EditUserPage() {
     try {
       setFetchLoading(true);
       const [userResponse, rolesResponse] = await Promise.all([
-        axios.get(`/api/users/${userId}`),
-        axios.get('/api/roles')
+        axiosInstance.get(`/users/${userId}`),
+        axiosInstance.get('/roles')
       ]);
 
-      if (userResponse.data.success) {
-        const userData = userResponse.data.data.user;
-        setUser(userData);
-        setFormData({
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          roles: userData.roles.map((r: { _id: string }) => r._id),
-          isActive: userData.isActive,
-          password: ''
-        });
-      }
+      // After interceptor, response.data is unwrapped
+      const userData = userResponse.data.user;
+      setUser(userData);
+      setFormData({
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        roles: userData.roles.map((r: { _id: string }) => r._id),
+        isActive: userData.isActive,
+        password: ''
+      });
 
-      if (rolesResponse.data.success) {
-        setRoles(rolesResponse.data.data.roles);
-      }
+      setRoles(rolesResponse.data.roles);
     } catch (error) {
       const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
       setError(axiosError.response?.data?.error?.message || 'Failed to load user data');
@@ -122,10 +119,8 @@ export default function EditUserPage() {
         updateData.password = formData.password;
       }
 
-      const response = await axios.patch(`/api/users/${userId}`, updateData);
-      if (response.data.success) {
-        router.push('/admin/users');
-      }
+      await axiosInstance.patch(`/users/${userId}`, updateData);
+      router.push('/admin/users');
     } catch (err) {
       const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
       setError(axiosError.response?.data?.error?.message || 'Failed to update user');

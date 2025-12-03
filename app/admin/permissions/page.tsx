@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import axios from '@/lib/api/axios';
+import axiosInstance from '@/lib/api/axios';
 import { PERMISSIONS } from '@/config/permissions';
 import PermissionGate from '@/app/components/guards/PermissionGate';
 import {
@@ -70,10 +70,9 @@ export default function PermissionsPage() {
   const fetchPermissions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/permissions');
-      if (response.data.success) {
-        setPermissions(response.data.data.permissions);
-      }
+      const response = await axiosInstance.get('/permissions');
+      // After interceptor, response.data is unwrapped
+      setPermissions(response.data.permissions);
     } catch (error) {
       console.error('Error fetching permissions:', error);
       toast.error('Failed to fetch permissions');
@@ -84,7 +83,7 @@ export default function PermissionsPage() {
 
   const handleCreate = async () => {
     try {
-      await axios.post('/api/permissions', formData);
+      await axiosInstance.post('/permissions', formData);
       toast.success('Permission created successfully');
       setIsCreateDialogOpen(false);
       resetForm();
@@ -99,7 +98,7 @@ export default function PermissionsPage() {
     if (!editingPermission) return;
 
     try {
-      await axios.put(`/api/permissions/${editingPermission._id}`, formData);
+      await axiosInstance.put(`/permissions/${editingPermission._id}`, formData);
       toast.success('Permission updated successfully');
       setIsEditDialogOpen(false);
       setEditingPermission(null);
@@ -115,7 +114,7 @@ export default function PermissionsPage() {
     if (!confirm('Are you sure you want to delete this permission?')) return;
 
     try {
-      await axios.delete(`/api/permissions/${permissionId}`);
+      await axiosInstance.delete(`/permissions/${permissionId}`);
       toast.success('Permission deleted successfully');
       fetchPermissions();
     } catch (error) {

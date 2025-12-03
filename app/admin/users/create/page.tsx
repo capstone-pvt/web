@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from '@/lib/api/axios';
+import axiosInstance from '@/lib/api/axios';
 import { PERMISSIONS } from '@/config/permissions';
 import PermissionGate from '@/app/components/guards/PermissionGate';
 import {
@@ -20,7 +20,7 @@ import {
 import { toast } from 'sonner';
 
 interface Role {
-  id: string;
+  _id: string;
   name: string;
   displayName: string;
   hierarchy: number;
@@ -45,10 +45,9 @@ export default function CreateUserPage() {
 
   const fetchRoles = async () => {
     try {
-      const response = await axios.get('/api/roles');
-      if (response.data.success) {
-        setRoles(response.data.data.roles);
-      }
+      const response = await axiosInstance.get('/roles');
+      // After interceptor, response.data is unwrapped
+      setRoles(response.data.roles);
     } catch (error) {
       console.error('Error fetching roles:', error);
     }
@@ -76,11 +75,9 @@ export default function CreateUserPage() {
     setLoading(true);
 
     try {
-      const response = await axios.post('/api/users', formData);
-      if (response.data.success) {
-        toast.success('User created successfully');
-        router.push('/admin/users');
-      }
+      await axiosInstance.post('/users', formData);
+      toast.success('User created successfully');
+      router.push('/admin/users');
     } catch (err) {
       const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
       const errorMessage = axiosError.response?.data?.error?.message || 'Failed to create user';
@@ -149,14 +146,14 @@ export default function CreateUserPage() {
                 <Label>Assign Roles</Label>
                 <div className="space-y-2">
                   {roles.map((role) => (
-                    <div key={role.id} className="flex items-center space-x-2">
+                    <div key={role._id} className="flex items-center space-x-2">
                       <Checkbox
-                        id={role.id}
-                        checked={formData.roles.includes(role.id)}
-                        onCheckedChange={() => handleRoleToggle(role.id)}
+                        id={role._id}
+                        checked={formData.roles.includes(role._id)}
+                        onCheckedChange={() => handleRoleToggle(role._id)}
                       />
                       <Label
-                        htmlFor={role.id}
+                        htmlFor={role._id}
                         className="text-sm font-normal cursor-pointer"
                       >
                         {role.displayName}

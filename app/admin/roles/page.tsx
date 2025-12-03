@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from 'react';
-import axios from '@/lib/api/axios';
+import axiosInstance from '@/lib/api/axios';
 import { PERMISSIONS } from '@/config/permissions';
 import PermissionGate from '@/app/components/guards/PermissionGate';
 import {
@@ -147,23 +147,20 @@ export default function RolesPage() {
     try {
       setLoading(true);
       const [rolesRes, permissionsRes] = await Promise.all([
-        axios.get('/api/roles'),
-        axios.get('/api/permissions'),
+        axiosInstance.get('/roles'),
+        axiosInstance.get('/permissions'),
       ]);
 
-      if (rolesRes.data.success) {
-        const fetchedRoles = rolesRes.data.data.roles;
-        setRoles(fetchedRoles);
-        const initialEditingState: Record<string, string[]> = {};
-        fetchedRoles.forEach((role: Role) => {
-          initialEditingState[role._id] = role.permissions.map(p => p._id);
-        });
-        setEditingPermissions(initialEditingState);
-      }
+      // After interceptor, response.data is unwrapped
+      const fetchedRoles = rolesRes.data.roles;
+      setRoles(fetchedRoles);
+      const initialEditingState: Record<string, string[]> = {};
+      fetchedRoles.forEach((role: Role) => {
+        initialEditingState[role._id] = role.permissions.map(p => p._id);
+      });
+      setEditingPermissions(initialEditingState);
 
-      if (permissionsRes.data.success) {
-        setAllPermissions(permissionsRes.data.data.permissions);
-      }
+      setAllPermissions(permissionsRes.data.permissions);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -185,7 +182,7 @@ export default function RolesPage() {
   const handleSaveChanges = async (roleId: string) => {
     try {
       const permissionsToSave = editingPermissions[roleId] || [];
-      await axios.put(`/api/roles/${roleId}`, { permissions: permissionsToSave });
+      await axiosInstance.put(`/roles/${roleId}`, { permissions: permissionsToSave });
       toast.success('Role updated successfully');
       fetchData();
     } catch (error) {

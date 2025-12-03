@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import axios from '@/lib/api/axios';
+import axiosInstance from '@/lib/api/axios';
 import { ApiState } from '@/types/ui.types';
 
 interface UseApiDataOptions<T = unknown> {
@@ -22,8 +22,9 @@ export function useApiData<T>(
   const { data, error, isLoading, refetch } = useQuery<T, Error>({
     queryKey: Array.isArray(queryKey) ? queryKey : [queryKey],
     queryFn: async () => {
-      const response = await axios.get(url);
-      return response.data.success ? response.data.data : response.data;
+      const response = await axiosInstance.get(url);
+      // After interceptor, response.data is already unwrapped
+      return response.data;
     },
   });
 

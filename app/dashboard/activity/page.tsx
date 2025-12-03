@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import axios from '@/lib/api/axios';
+import axiosInstance from '@/lib/api/axios';
 import { PERMISSIONS } from '@/config/permissions';
 import PermissionGate from '@/app/components/guards/PermissionGate';
 
@@ -56,10 +56,9 @@ export default function ActivityPage() {
         ...(resourceFilter && { resource: resourceFilter }),
         ...(statusFilter && { status: statusFilter })
       });
-      const response = await axios.get(`/api/audit-logs?${params}`);
-      if (response.data.success) {
-        setRecentActivity(response.data.data.logs);
-      }
+      const response = await axiosInstance.get(`/audit-logs?${params}`);
+      // After interceptor, response.data is unwrapped
+      setRecentActivity(response.data.logs);
     } catch (error) {
       console.error('Error fetching activity:', error);
     } finally {
@@ -70,10 +69,9 @@ export default function ActivityPage() {
   const fetchStatistics = async () => {
     try {
       setStatsLoading(true);
-      const response = await axios.get('/api/audit-logs/statistics');
-      if (response.data.success) {
-        setStatistics(response.data.data.statistics);
-      }
+      const response = await axiosInstance.get('/audit-logs/statistics');
+      // After interceptor, response.data is unwrapped
+      setStatistics(response.data.statistics);
     } catch (error) {
       console.error('Error fetching statistics:', error);
     } finally {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import axios from '@/lib/api/axios';
+import axiosInstance from '@/lib/api/axios';
 import { PERMISSIONS } from '@/config/permissions';
 import PermissionGate from '@/app/components/guards/PermissionGate';
 import Link from 'next/link';
@@ -65,11 +65,10 @@ export default function UsersPage() {
         ...(roleFilter && { role: roleFilter })
       });
 
-      const response = await axios.get(`/api/users?${params}`);
-      if (response.data.success) {
-        setUsers(response.data.data.users);
-        setTotalPages(response.data.data.pagination.totalPages);
-      }
+      const response = await axiosInstance.get(`/users?${params}`);
+      // After interceptor, response.data is unwrapped
+      setUsers(response.data.users);
+      setTotalPages(response.data.pagination.totalPages);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -81,7 +80,7 @@ export default function UsersPage() {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
-      await axios.delete(`/api/users/${userId}`);
+      await axiosInstance.delete(`/users/${userId}`);
       toast.success('User deleted successfully');
       fetchUsers();
     } catch (error) {
