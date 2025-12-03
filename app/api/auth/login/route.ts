@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import AuthService from '@/lib/services/auth.service';
 import { loginSchema } from '@/lib/utils/validation';
 import { ValidationError } from '@/lib/utils/errors';
@@ -27,18 +27,22 @@ export async function POST(request: NextRequest) {
     // Log successful login
     await logLogin(request, credentials.email, user._id.toString());
 
-    const permissions = user.roles.flatMap((role: any) =>
-      role.permissions.map((p: any) => ({
-        id: p._id.toString(),
-        name: p.name,
-        displayName: p.displayName,
-        description: p.description,
-        resource: p.resource,
-        action: p.action,
-        category: p.category,
-        isSystemPermission: p.isSystemPermission
-      }))
-    );
+    const permissions = user.roles.flatMap((role: unknown) => {
+      const r = role as { permissions: unknown[] };
+      return r.permissions.map((p: unknown) => {
+        const perm = p as { _id: { toString: () => string }; name: string; displayName: string; description: string; resource: string; action: string; category: string; isSystemPermission: boolean };
+        return {
+          id: perm._id.toString(),
+          name: perm.name,
+          displayName: perm.displayName,
+          description: perm.description,
+          resource: perm.resource,
+          action: perm.action,
+          category: perm.category,
+          isSystemPermission: perm.isSystemPermission
+        };
+      });
+    });
 
     const userResponse = {
       id: user._id.toString(),
@@ -46,13 +50,16 @@ export async function POST(request: NextRequest) {
       firstName: user.firstName,
       lastName: user.lastName,
       fullName: user.fullName,
-      roles: user.roles.map((r: any) => ({
-        id: r._id.toString(),
-        name: r.name,
-        displayName: r.displayName,
-        description: r.description,
-        hierarchy: r.hierarchy
-      })),
+      roles: user.roles.map((r: unknown) => {
+        const role = r as { _id: { toString: () => string }; name: string; displayName: string; description: string; hierarchy: number };
+        return {
+          id: role._id.toString(),
+          name: role.name,
+          displayName: role.displayName,
+          description: role.description,
+          hierarchy: role.hierarchy
+        };
+      }),
       permissions
     };
 
@@ -61,7 +68,7 @@ export async function POST(request: NextRequest) {
     setAuthCookies(response, accessToken, refreshToken, credentials.rememberMe || false);
 
     return response;
-  } catch (error: any) {
+  } catch (error) {
     return errorResponse(error);
   }
 }

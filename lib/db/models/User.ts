@@ -94,7 +94,7 @@ UserSchema.methods.comparePassword = async function(candidatePassword: string): 
 // Instance method: Check if user has role
 UserSchema.methods.hasRole = async function(roleName: string): Promise<boolean> {
   await this.populate('roles');
-  return this.roles.some((role: any) => role.name === roleName);
+  return this.roles.some((role: { name: string }) => role.name === roleName);
 };
 
 // Instance method: Check if user has permission
@@ -104,8 +104,8 @@ UserSchema.methods.hasPermission = async function(permissionName: string): Promi
     populate: { path: 'permissions' }
   });
 
-  for (const role of this.roles as any[]) {
-    if (role.permissions && role.permissions.some((p: any) => p.name === permissionName)) {
+  for (const role of this.roles as { permissions?: { name: string }[] }[]) {
+    if (role.permissions && role.permissions.some((p: { name: string }) => p.name === permissionName)) {
       return true;
     }
   }

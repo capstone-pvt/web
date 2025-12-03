@@ -6,7 +6,7 @@ class SessionRepository {
   async create(data: {
     userId: Types.ObjectId | string;
     refreshToken: string;
-    deviceInfo: any;
+    deviceInfo: { userAgent?: string; ip?: string; browser?: string; os?: string };
     expiresAt: Date;
   }): Promise<ISession> {
     await connectDB();

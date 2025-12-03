@@ -20,7 +20,7 @@ export function AuthProvider({ children }: Readonly<{
       if (response.data.success) {
         setUser(response.data.data.user);
       }
-    } catch (error) {
+    } catch {
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -37,11 +37,12 @@ export function AuthProvider({ children }: Readonly<{
       if (response.data.success) {
         // After successful login and cookies are set, refresh the user data
         // This will update the AuthContext state with the latest user and permissions
-        await refreshUser(); 
+        await refreshUser();
         router.push('/dashboard');
       }
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error?.message || 'Login failed');
+    } catch (err) {
+      const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
+      throw new Error(axiosError.response?.data?.error?.message || 'Login failed');
     }
   };
 
@@ -52,16 +53,17 @@ export function AuthProvider({ children }: Readonly<{
         // After registration, login automatically
         await login({ email: data.email, password: data.password });
       }
-    } catch (error: any) {
-      throw new Error(error.response?.data?.error?.message || 'Registration failed');
+    } catch (err) {
+      const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
+      throw new Error(axiosError.response?.data?.error?.message || 'Registration failed');
     }
   };
 
   const logout = async () => {
     try {
       await axios.post('/api/auth/logout');
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch (err) {
+      console.error('Logout error:', err);
     } finally {
       setUser(null);
       router.push('/login');

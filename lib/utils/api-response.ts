@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { ApiResponse, ErrorCode } from '@/types/api.types';
 import { AppError } from './errors';
+import { ApiResponse } from '@/types/api.types';
 
 export function successResponse<T>(data: T, message?: string, status: number = 200): NextResponse {
   const response: ApiResponse<T> = {

@@ -36,7 +36,7 @@ export default function CreateUserPage() {
     lastName: '',
     roles: [] as string[]
   });
-  const [error, setError] = useState('');
+  const [, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -81,8 +81,9 @@ export default function CreateUserPage() {
         toast.success('User created successfully');
         router.push('/admin/users');
       }
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error?.message || 'Failed to create user';
+    } catch (err) {
+      const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
+      const errorMessage = axiosError.response?.data?.error?.message || 'Failed to create user';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {

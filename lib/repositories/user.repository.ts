@@ -2,7 +2,7 @@ import User, { IUser } from '@/lib/db/models/User';
 import Role from '@/lib/db/models/Role';
 import connectDB from '@/lib/db/mongodb';
 import { CreateUserDTO, UpdateUserDTO, UserFilters } from '@/types/user.types';
-import { Types } from 'mongoose';
+import { Types, FilterQuery } from 'mongoose';
 
 class UserRepository {
   async create(data: CreateUserDTO): Promise<IUser> {
@@ -60,7 +60,7 @@ class UserRepository {
       order = 'desc'
     } = filters;
 
-    const query: any = {};
+    const query: FilterQuery<IUser> = {};
 
     if (search) {
       query.$or = [
@@ -88,8 +88,8 @@ class UserRepository {
 
     let filteredUsers = users;
     if (role) {
-      filteredUsers = users.filter((user: any) =>
-        user.roles.some((r: any) => r.name === role)
+      filteredUsers = users.filter((user) =>
+        user.roles.some((r: unknown) => (r as { name: string }).name === role)
       );
     }
 
@@ -131,7 +131,7 @@ class UserRepository {
 
   async count(filters: UserFilters = {}): Promise<number> {
     await connectDB();
-    const query: any = {};
+    const query: FilterQuery<IUser> = {};
 
     if (filters.search) {
       query.$or = [

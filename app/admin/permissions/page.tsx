@@ -1,15 +1,55 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import axios from '@/lib/api/axios';
-import { IPermission } from '@/lib/db/models/Permission';
-import PermissionGate from '@/app/components/guards/PermissionGate';
 import { PERMISSIONS } from '@/config/permissions';
+import PermissionGate from '@/app/components/guards/PermissionGate';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Input,
+  Badge,
+  PageHeader,
+  DataTable,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/app/components/ui';
+import { PlusIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
+import { toast } from 'sonner';
 
-const PermissionsPage = () => {
-  const [permissions, setPermissions] = useState<IPermission[]>([]);
-  const [editingPermission, setEditingPermission] = useState<IPermission | null>(null);
-  const [newPermission, setNewPermission] = useState({
+interface Permission extends Record<string, unknown> {
+  _id: string;
+  name: string;
+  displayName: string;
+  description: string;
+  resource: string;
+  action: string;
+  category: string;
+  isSystemPermission: boolean;
+  createdAt: string;
+}
+
+interface PermissionFormData {
+  name: string;
+  displayName: string;
+  description: string;
+  resource: string;
+  action: string;
+  category: string;
+}
+
+export default function PermissionsPage() {
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
+  const [formData, setFormData] = useState<PermissionFormData>({
     name: '',
     displayName: '',
     description: '',
@@ -23,14 +63,77 @@ const PermissionsPage = () => {
   }, []);
 
   const fetchPermissions = async () => {
-    const res = await axios.get('/api/permissions');
-    setPermissions(res.data.data.permissions);
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/permissions');
+      if (response.data.success) {
+        setPermissions(response.data.data.permissions);
+      }
+    } catch (error) {
+      console.error('Error fetching permissions:', error);
+      toast.error('Failed to fetch permissions');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCreate = async () => {
-    await axios.post('/api/permissions', newPermission);
-    fetchPermissions();
-    setNewPermission({
+    try {
+      await axios.post('/api/permissions', formData);
+      toast.success('Permission created successfully');
+      setIsCreateDialogOpen(false);
+      resetForm();
+      fetchPermissions();
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(axiosError.response?.data?.error?.message || 'Failed to create permission');
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!editingPermission) return;
+
+    try {
+      await axios.put(`/api/permissions/${editingPermission._id}`, formData);
+      toast.success('Permission updated successfully');
+      setIsEditDialogOpen(false);
+      setEditingPermission(null);
+      resetForm();
+      fetchPermissions();
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(axiosError.response?.data?.error?.message || 'Failed to update permission');
+    }
+  };
+
+  const handleDelete = async (permissionId: string) => {
+    if (!confirm('Are you sure you want to delete this permission?')) return;
+
+    try {
+      await axios.delete(`/api/permissions/${permissionId}`);
+      toast.success('Permission deleted successfully');
+      fetchPermissions();
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(axiosError.response?.data?.error?.message || 'Failed to delete permission');
+    }
+  };
+
+  const openEditDialog = (permission: Permission) => {
+    setEditingPermission(permission);
+    setFormData({
+      name: permission.name,
+      displayName: permission.displayName,
+      description: permission.description,
+      resource: permission.resource,
+      action: permission.action,
+      category: permission.category,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
       name: '',
       displayName: '',
       description: '',
@@ -40,93 +143,327 @@ const PermissionsPage = () => {
     });
   };
 
-  const handleUpdate = async (_id: string) => {
-    if (!editingPermission) return;
-    await axios.put(`/api/permissions/${_id}`, editingPermission);
-    fetchPermissions();
-    setEditingPermission(null);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
-  const handleDelete = async (_id: string) => {
-    await axios.delete(`/api/permissions/${_id}`);
-    fetchPermissions();
-  };
+  const columns = [
+    {
+      key: 'displayName',
+      label: 'Permission',
+      render: (_: unknown, permission: Permission) => (
+        <div>
+          <div className="font-medium">{permission.displayName}</div>
+          <div className="text-sm text-muted-foreground">{permission.name}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      render: (_: unknown, permission: Permission) => (
+        <Badge variant="secondary">{permission.category}</Badge>
+      ),
+    },
+    {
+      key: 'resource',
+      label: 'Resource',
+      render: (_: unknown, permission: Permission) => (
+        <span className="text-sm">{permission.resource}</span>
+      ),
+    },
+    {
+      key: 'action',
+      label: 'Action',
+      render: (_: unknown, permission: Permission) => (
+        <Badge variant="outline">{permission.action}</Badge>
+      ),
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      render: (_: unknown, permission: Permission) => (
+        <Badge variant={permission.isSystemPermission ? 'default' : 'secondary'}>
+          {permission.isSystemPermission ? 'System' : 'Custom'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      className: 'text-right',
+      render: (_: unknown, permission: Permission) => (
+        <div className="flex justify-end gap-2">
+          <PermissionGate permission={PERMISSIONS.PERMISSIONS_MANAGE}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openEditDialog(permission)}
+              disabled={permission.isSystemPermission}
+            >
+              <Pencil1Icon className="h-4 w-4" />
+            </Button>
+          </PermissionGate>
+          <PermissionGate permission={PERMISSIONS.PERMISSIONS_MANAGE}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDelete(permission._id)}
+              disabled={permission.isSystemPermission}
+            >
+              <TrashIcon className="h-4 w-4" />
+            </Button>
+          </PermissionGate>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <PermissionGate permission={PERMISSIONS.PERMISSIONS_MANAGE}>
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Permissions</h1>
+      <div className="space-y-6">
+        <PageHeader
+          title="Permissions Management"
+          description="Manage system permissions and access control"
+          action={
+            <PermissionGate permission={PERMISSIONS.PERMISSIONS_MANAGE}>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Create Permission
+              </Button>
+            </PermissionGate>
+          }
+        />
 
-        {/* Create Form */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold">Create Permission</h2>
-          <div className="grid grid-cols-2 gap-4">
-            {Object.keys(newPermission).map((key) => (
-              <input
-                key={key}
-                type="text"
-                placeholder={key}
-                value={newPermission[key as keyof typeof newPermission]}
-                onChange={(e) =>
-                  setNewPermission({ ...newPermission, [key]: e.target.value })
-                }
-                className="p-2 border"
-              />
-            ))}
-          </div>
-          <button onClick={handleCreate} className="mt-4 bg-blue-500 text-white p-2">
-            Create
-          </button>
-        </div>
+        <Card>
+          <CardHeader>
+            <h2 className="text-lg font-semibold">All Permissions</h2>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+              </div>
+            ) : (
+              <DataTable data={permissions} columns={columns} />
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Permissions List */}
-        <div>
-          <h2 className="text-xl font-semibold">Existing Permissions</h2>
-          {permissions.map((p) => (
-            <div key={p._id.toString()} className="p-4 border-b">
-              {editingPermission?._id === p._id ? (
-                <div className="grid grid-cols-2 gap-4">
-                  {Object.keys(newPermission).map((key) => (
-                    <input
-                      key={key}
-                      type="text"
-                      value={editingPermission[key as keyof IPermission] as string}
-                      onChange={(e) =>
-                        setEditingPermission({
-                          ...editingPermission,
-                          [key]: e.target.value,
-                        } as IPermission)
-                      }
-                      className="p-2 border"
-                    />
-                  ))}
-                  <button onClick={() => handleUpdate(p._id.toString())} className="bg-green-500 text-white p-2">
-                    Save
-                  </button>
-                  <button onClick={() => setEditingPermission(null)} className="bg-gray-500 text-white p-2">
-                    Cancel
-                  </button>
+        {/* Create Permission Dialog */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Create New Permission</DialogTitle>
+              <DialogDescription>
+                Add a new permission to the system. System permissions cannot be modified.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="name" className="text-sm font-medium">
+                    Permission Name *
+                  </label>
+                  <Input
+                    id="name"
+                    name="name"
+                    placeholder="e.g., users:read"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
-              ) : (
-                <div>
-                  <h3 className="font-bold">{p.displayName}</h3>
-                  <p>{p.description}</p>
-                  <div className="flex gap-2 mt-2">
-                    <button onClick={() => setEditingPermission(p)} className="bg-yellow-500 text-white p-2">
-                      Edit
-                    </button>
-                    <button onClick={() => handleDelete(p._id.toString())} className="bg-red-500 text-white p-2">
-                      Delete
-                    </button>
-                  </div>
+                <div className="space-y-2">
+                  <label htmlFor="displayName" className="text-sm font-medium">
+                    Display Name *
+                  </label>
+                  <Input
+                    id="displayName"
+                    name="displayName"
+                    placeholder="e.g., Read Users"
+                    value={formData.displayName}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
-              )}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium">
+                  Description *
+                </label>
+                <Input
+                  id="description"
+                  name="description"
+                  placeholder="Brief description of this permission"
+                  value={formData.description}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="resource" className="text-sm font-medium">
+                    Resource *
+                  </label>
+                  <Input
+                    id="resource"
+                    name="resource"
+                    placeholder="e.g., users"
+                    value={formData.resource}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="action" className="text-sm font-medium">
+                    Action *
+                  </label>
+                  <Input
+                    id="action"
+                    name="action"
+                    placeholder="e.g., read"
+                    value={formData.action}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="category" className="text-sm font-medium">
+                    Category *
+                  </label>
+                  <Input
+                    id="category"
+                    name="category"
+                    placeholder="e.g., User Management"
+                    value={formData.category}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsCreateDialogOpen(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreate}>Create Permission</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Permission Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Edit Permission</DialogTitle>
+              <DialogDescription>
+                Update permission details. System permissions cannot be modified.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="edit-name" className="text-sm font-medium">
+                    Permission Name *
+                  </label>
+                  <Input
+                    id="edit-name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="edit-displayName" className="text-sm font-medium">
+                    Display Name *
+                  </label>
+                  <Input
+                    id="edit-displayName"
+                    name="displayName"
+                    value={formData.displayName}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="edit-description" className="text-sm font-medium">
+                  Description *
+                </label>
+                <Input
+                  id="edit-description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="edit-resource" className="text-sm font-medium">
+                    Resource *
+                  </label>
+                  <Input
+                    id="edit-resource"
+                    name="resource"
+                    value={formData.resource}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="edit-action" className="text-sm font-medium">
+                    Action *
+                  </label>
+                  <Input
+                    id="edit-action"
+                    name="action"
+                    value={formData.action}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="edit-category" className="text-sm font-medium">
+                    Category *
+                  </label>
+                  <Input
+                    id="edit-category"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsEditDialogOpen(false);
+                  setEditingPermission(null);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleUpdate}>Update Permission</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </PermissionGate>
   );
-};
-
-export default PermissionsPage;
+}

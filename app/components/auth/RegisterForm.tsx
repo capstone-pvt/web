@@ -41,8 +41,9 @@ export default function RegisterForm() {
         email: formData.email,
         password: formData.password
       });
-    } catch (err: any) {
-      setError(err.message || 'Registration failed');
+    } catch (err) {
+      const error = err as { message?: string };
+      setError(error.message || 'Registration failed');
     } finally {
       setIsLoading(false);
     }

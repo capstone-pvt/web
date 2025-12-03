@@ -25,7 +25,7 @@ import {
 import { PlusIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
 import { toast } from 'sonner';
 
-interface User {
+interface User extends Record<string, unknown> {
   _id: string;
   email: string;
   firstName: string;
@@ -47,6 +47,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search, roleFilter]);
 
   const fetchUsers = async () => {
@@ -78,8 +79,9 @@ export default function UsersPage() {
       await axios.delete(`/api/users/${userId}`);
       toast.success('User deleted successfully');
       fetchUsers();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error?.message || 'Failed to delete user');
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(axiosError.response?.data?.error?.message || 'Failed to delete user');
     }
   };
 
@@ -87,7 +89,7 @@ export default function UsersPage() {
     {
       key: 'user',
       label: 'User',
-      render: (_: any, user: User) => (
+      render: (_: unknown, user: User) => (
         <div className="flex items-center gap-3">
           <Avatar>
             <AvatarFallback>
@@ -104,7 +106,7 @@ export default function UsersPage() {
     {
       key: 'roles',
       label: 'Role',
-      render: (_: any, user: User) => (
+      render: (_: unknown, user: User) => (
         <Badge variant="secondary">
           {user.roles[0]?.displayName || 'No Role'}
         </Badge>
@@ -113,7 +115,7 @@ export default function UsersPage() {
     {
       key: 'isActive',
       label: 'Status',
-      render: (_: any, user: User) => (
+      render: (_: unknown, user: User) => (
         <Badge variant={user.isActive ? 'default' : 'destructive'}>
           {user.isActive ? 'Active' : 'Inactive'}
         </Badge>
@@ -122,7 +124,7 @@ export default function UsersPage() {
     {
       key: 'lastLoginAt',
       label: 'Last Login',
-      render: (_: any, user: User) => (
+      render: (_: unknown, user: User) => (
         <span className="text-sm text-muted-foreground">
           {user.lastLoginAt
             ? new Date(user.lastLoginAt).toLocaleDateString()
@@ -133,7 +135,7 @@ export default function UsersPage() {
     {
       key: 'actions',
       label: 'Actions',
-      render: (_: any, user: User) => (
+      render: (_: unknown, user: User) => (
         <div className="flex justify-end gap-2">
           <PermissionGate permission={PERMISSIONS.USERS_UPDATE}>
             <Link href={`/admin/users/${user._id}/edit`}>

@@ -36,7 +36,7 @@ export function FormField({
           id={inputId}
           className={cn(error && 'border-destructive', className)}
           rows={rows}
-          {...(props as any)}
+          {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
         />
       ) : (
         <Input

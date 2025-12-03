@@ -2,15 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from '@/lib/api/axios';
 import { ApiState } from '@/types/ui.types';
 
-interface UseApiDataOptions {
+interface UseApiDataOptions<T = unknown> {
   autoFetch?: boolean;
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: T) => void;
   onError?: (error: string) => void;
 }
 
 export function useApiData<T>(
   url: string,
-  options: UseApiDataOptions = {}
+  options: UseApiDataOptions<T> = {}
 ): ApiState<T> & {
   refetch: () => Promise<void>;
   setData: (data: T | null) => void;
@@ -32,10 +32,11 @@ export function useApiData<T>(
 
       setState({ data, loading: false, error: null });
       onSuccess?.(data);
-    } catch (error: any) {
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
       const errorMessage =
-        error.response?.data?.error?.message ||
-        error.message ||
+        axiosError.response?.data?.error?.message ||
+        axiosError.message ||
         'An error occurred';
 
       setState({ data: null, loading: false, error: errorMessage });
@@ -44,6 +45,8 @@ export function useApiData<T>(
   }, [url, onSuccess, onError]);
 
   useEffect(() => {
+  // Note: This pattern is intentional for data fetching on mount. The fetchData function
+  // is wrapped in useCallback and includes proper state management.
     if (autoFetch) {
       fetchData();
     }

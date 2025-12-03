@@ -22,6 +22,15 @@ interface User {
   roles: Array<{ _id: string; name: string; displayName: string }>;
 }
 
+interface UpdateUserData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  roles: string[];
+  isActive: boolean;
+  password?: string;
+}
+
 export default function EditUserPage() {
   const router = useRouter();
   const params = useParams();
@@ -43,6 +52,7 @@ export default function EditUserPage() {
 
   useEffect(() => {
     fetchUserAndRoles();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const fetchUserAndRoles = async () => {
@@ -60,7 +70,7 @@ export default function EditUserPage() {
           email: userData.email,
           firstName: userData.firstName,
           lastName: userData.lastName,
-          roles: userData.roles.map((r: any) => r._id),
+          roles: userData.roles.map((r: { _id: string }) => r._id),
           isActive: userData.isActive,
           password: ''
         });
@@ -69,8 +79,9 @@ export default function EditUserPage() {
       if (rolesResponse.data.success) {
         setRoles(rolesResponse.data.data.roles);
       }
-    } catch (error: any) {
-      setError(error.response?.data?.error?.message || 'Failed to load user data');
+    } catch (error) {
+      const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
+      setError(axiosError.response?.data?.error?.message || 'Failed to load user data');
     } finally {
       setFetchLoading(false);
     }
@@ -99,7 +110,7 @@ export default function EditUserPage() {
 
     try {
       // Prepare update data - only include password if it's been set
-      const updateData: any = {
+      const updateData: UpdateUserData = {
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -115,8 +126,9 @@ export default function EditUserPage() {
       if (response.data.success) {
         router.push('/admin/users');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to update user');
+    } catch (err) {
+      const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
+      setError(axiosError.response?.data?.error?.message || 'Failed to update user');
     } finally {
       setLoading(false);
     }

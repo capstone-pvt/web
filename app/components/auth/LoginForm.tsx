@@ -19,8 +19,9 @@ export default function LoginForm() {
 
     try {
       await login({ email, password, rememberMe });
-    } catch (err: any) {
-      setError(err.message || 'Login failed');
+    } catch (err) {
+      const error = err as { message?: string };
+      setError(error.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +93,7 @@ export default function LoginForm() {
       </button>
 
       <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-        Don't have an account?{' '}
+        Don&apos;t have an account?{' '}
         <Link href="/register" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
           Sign up
         </Link>

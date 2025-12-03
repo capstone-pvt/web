@@ -13,7 +13,7 @@ interface AuditLog {
   action: string;
   resource: string;
   resourceId?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   status: 'success' | 'failure';
@@ -41,6 +41,7 @@ export default function ActivityPage() {
 
   useEffect(() => {
     fetchRecentActivity();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resourceFilter, statusFilter, limitFilter]);
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import AuthService from '@/lib/services/auth.service';
 import { registerSchema } from '@/lib/utils/validation';
 import { ValidationError } from '@/lib/utils/errors';
@@ -41,10 +41,11 @@ export async function POST(request: NextRequest) {
       'Registration successful',
       201
     );
-  } catch (error: any) {
+  } catch (error) {
     // Log failed registration
     if (email) {
-      await logRegistration(request, email, 'unknown', false, error.message);
+      const err = error as { message?: string };
+      await logRegistration(request, email, 'unknown', false, err.message);
     }
     return errorResponse(error);
   }

@@ -17,7 +17,12 @@ const SettingsPage = () => {
   };
 
   useEffect(() => {
-    fetchSettings();
+    const loadSettings = async () => {
+      const res = await axios.get('/api/settings');
+      setSettings(res.data.data.settings);
+      setFormData(res.data.data.settings || {});
+    };
+    loadSettings();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

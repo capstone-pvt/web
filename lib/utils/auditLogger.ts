@@ -42,7 +42,7 @@ export async function logAuthenticatedAction(
   resource: string,
   options?: {
     resourceId?: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
     status?: 'success' | 'failure';
     errorMessage?: string;
   }
@@ -148,7 +148,7 @@ export function withAuditLog<T>(
   fn: () => Promise<T>,
   options?: {
     getResourceId?: (result: T) => string;
-    getDetails?: (result: T) => Record<string, any>;
+    getDetails?: (result: T) => Record<string, unknown>;
   }
 ): Promise<T> {
   return fn()

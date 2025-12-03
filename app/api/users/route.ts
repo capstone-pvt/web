@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     await authorizeRequest(authRequest, [PERMISSIONS.USERS_READ]);
 
     const { searchParams } = new URL(request.url);
+    const orderParam = searchParams.get('order');
     const filters: UserFilters = {
       search: searchParams.get('search') || undefined,
       role: searchParams.get('role') || undefined,
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
       page: searchParams.has('page') ? parseInt(searchParams.get('page')!) : 1,
       limit: searchParams.has('limit') ? parseInt(searchParams.get('limit')!) : 20,
       sortBy: searchParams.get('sortBy') || 'createdAt',
-      order: searchParams.get('order') || 'desc',
+      order: orderParam === 'asc' || orderParam === 'desc' ? orderParam : 'desc',
     };
 
     const { users, totalPages } = await UserRepository.findAll(filters);

@@ -14,9 +14,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Extract only permission names as an array of strings
-    const permissions = user.roles.flatMap((role: any) =>
-      (role.permissions || []).map((p: any) => p.name)
-    );
+    const permissions = user.roles.flatMap((role: unknown) => {
+      const r = role as { permissions?: unknown[] };
+      return (r.permissions || []).map((p: unknown) => {
+        const perm = p as { name: string };
+        return perm.name;
+      });
+    });
 
     const userResponse = {
       _id: user._id.toString(),
@@ -26,13 +30,16 @@ export async function GET(request: NextRequest) {
       fullName: user.fullName,
       isActive: user.isActive,
       lastLoginAt: user.lastLoginAt?.toISOString(),
-      roles: user.roles.map((r: any) => ({
-        _id: r._id.toString(),
-        name: r.name,
-        displayName: r.displayName,
-        description: r.description,
-        hierarchy: r.hierarchy
-      })),
+      roles: user.roles.map((r: unknown) => {
+        const role = r as { _id: { toString: () => string }; name: string; displayName: string; description: string; hierarchy: number };
+        return {
+          _id: role._id.toString(),
+          name: role.name,
+          displayName: role.displayName,
+          description: role.description,
+          hierarchy: role.hierarchy
+        };
+      }),
       permissions // Now an array of strings
     };
 

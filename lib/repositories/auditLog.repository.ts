@@ -22,7 +22,7 @@ class AuditLogRepository {
     action: string;
     resource: string;
     resourceId?: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
     ipAddress?: string;
     userAgent?: string;
     status?: 'success' | 'failure';
@@ -51,7 +51,7 @@ class AuditLogRepository {
       limit = 50
     } = filters;
 
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (userId) {
       query.userId = userId;
@@ -78,12 +78,12 @@ class AuditLogRepository {
     }
 
     if (startDate || endDate) {
-      query.timestamp = {};
+      query.timestamp = {} as { $gte?: Date; $lte?: Date };
       if (startDate) {
-        query.timestamp.$gte = startDate;
+        (query.timestamp as { $gte?: Date; $lte?: Date }).$gte = startDate;
       }
       if (endDate) {
-        query.timestamp.$lte = endDate;
+        (query.timestamp as { $gte?: Date; $lte?: Date }).$lte = endDate;
       }
     }
 
@@ -124,7 +124,7 @@ class AuditLogRepository {
 
   async findByResource(resource: string, resourceId?: string, limit: number = 100): Promise<IAuditLog[]> {
     await connectDB();
-    const query: any = { resource };
+    const query: Record<string, unknown> = { resource };
     if (resourceId) {
       query.resourceId = resourceId;
     }
@@ -167,14 +167,14 @@ class AuditLogRepository {
   }> {
     await connectDB();
 
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (filters?.startDate || filters?.endDate) {
-      query.timestamp = {};
+      query.timestamp = {} as { $gte?: Date; $lte?: Date };
       if (filters.startDate) {
-        query.timestamp.$gte = filters.startDate;
+        (query.timestamp as { $gte?: Date; $lte?: Date }).$gte = filters.startDate;
       }
       if (filters.endDate) {
-        query.timestamp.$lte = filters.endDate;
+        (query.timestamp as { $gte?: Date; $lte?: Date }).$lte = filters.endDate;
       }
     }
 
@@ -209,15 +209,15 @@ class AuditLogRepository {
       totalLogs,
       successCount,
       failureCount,
-      byAction: byAction.reduce((acc: any, item: any) => {
+      byAction: byAction.reduce((acc: Record<string, number>, item: { _id: string; count: number }) => {
         acc[item._id] = item.count;
         return acc;
       }, {}),
-      byResource: byResource.reduce((acc: any, item: any) => {
+      byResource: byResource.reduce((acc: Record<string, number>, item: { _id: string; count: number }) => {
         acc[item._id] = item.count;
         return acc;
       }, {}),
-      byUser: byUser.map((item: any) => ({
+      byUser: byUser.map((item: { _id: { userId: string; userEmail: string }; count: number }) => ({
         userId: item._id.userId,
         userEmail: item._id.userEmail,
         count: item.count

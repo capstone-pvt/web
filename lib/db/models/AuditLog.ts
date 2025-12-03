@@ -7,7 +7,7 @@ export interface IAuditLog extends Document {
   action: string; // e.g., 'users.create', 'users.update', 'users.delete'
   resource: string; // e.g., 'users', 'roles', 'projects'
   resourceId?: string; // ID of the affected resource
-  details?: Record<string, any>; // Additional details about the action
+  details?: Record<string, unknown>; // Additional details about the action
   ipAddress?: string;
   userAgent?: string;
   status: 'success' | 'failure';
@@ -97,7 +97,7 @@ AuditLogSchema.statics.log = async function(data: {
   action: string;
   resource: string;
   resourceId?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   status?: 'success' | 'failure';

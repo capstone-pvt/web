@@ -8,7 +8,7 @@ export interface PaginationData {
 export interface TableColumn<T> {
   key: keyof T | string;
   label: string;
-  render?: (value: any, item: T) => React.ReactNode;
+  render?: (value: unknown, item: T) => React.ReactNode;
   sortable?: boolean;
   width?: string;
 }
@@ -22,7 +22,7 @@ export interface SearchFilters {
   search?: string;
   sortBy?: string;
   order?: 'asc' | 'desc';
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';

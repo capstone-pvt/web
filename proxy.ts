@@ -5,8 +5,8 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes that don't require authentication
-  const publicRoutes = ['/', '/login', '/register', '/forgot-password'];
-  const isPublicRoute = publicRoutes.includes(pathname);
+  // const publicRoutes = ['/', '/login', '/register', '/forgot-password'];
+  // const _isPublicRoute = publicRoutes.includes(pathname);
 
   // Auth routes - redirect to dashboard if already logged in
   const authRoutes = ['/login', '/register', '/forgot-password'];

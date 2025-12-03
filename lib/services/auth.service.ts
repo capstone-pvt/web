@@ -23,7 +23,7 @@ class AuthService {
     return user;
   }
 
-  async login(credentials: LoginCredentials, deviceInfo: any): Promise<{
+  async login(credentials: LoginCredentials, deviceInfo: { userAgent?: string; ip?: string; browser?: string; os?: string }): Promise<{
     user: IUser;
     accessToken: string;
     refreshToken: string;
@@ -38,12 +38,15 @@ class AuthService {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    await UserRepository.updateLastLogin(user._id.toString(), deviceInfo.ip);
+    await UserRepository.updateLastLogin(user._id.toString(), deviceInfo.ip || 'unknown');
 
     const accessToken = generateAccessToken({
       userId: user._id.toString(),
       email: user.email,
-      roles: user.roles.map((r: any) => r.name)
+      roles: user.roles.map((r: unknown) => {
+        const role = r as { name: string };
+        return role.name;
+      })
     });
 
     const refreshToken = generateRefreshToken(
@@ -99,7 +102,10 @@ class AuthService {
     const accessToken = generateAccessToken({
       userId: user._id.toString(),
       email: user.email,
-      roles: user.roles.map((r: any) => r.name)
+      roles: user.roles.map((r: unknown) => {
+        const role = r as { name: string };
+        return role.name;
+      })
     });
 
     return { user, accessToken };

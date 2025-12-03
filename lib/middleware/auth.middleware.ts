@@ -31,18 +31,25 @@ export async function authenticateRequest(request: NextRequest): Promise<Authent
     }
 
     // Extract permission names
-    const userPermissions = user.roles.flatMap((role: any) =>
-      role.permissions.map((p: any) => p.name)
-    );
+    const userPermissions = user.roles.flatMap((role: unknown) => {
+      const r = role as { permissions: unknown[] };
+      return r.permissions.map((p: unknown) => {
+        const perm = p as { name: string };
+        return perm.name;
+      });
+    });
 
     (request as AuthenticatedRequest).user = {
       userId: user._id.toString(),
       email: user.email,
-      roles: user.roles.map((r: any) => r.name),
+      roles: user.roles.map((r: unknown) => {
+        const role = r as { name: string };
+        return role.name;
+      }),
       permissions: userPermissions, // Assign extracted permissions
     };
     return request as AuthenticatedRequest;
-  } catch (error) {
+  } catch {
     throw new UnauthorizedError('Invalid or expired token');
   }
 }

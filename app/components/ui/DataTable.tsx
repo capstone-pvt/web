@@ -14,7 +14,7 @@ import EmptyState from './EmptyState';
 interface Column<T> {
   key: string;
   label: string;
-  render?: (value: any, item: T) => React.ReactNode;
+  render?: (value: unknown, item: T) => React.ReactNode;
   className?: string;
 }
 
@@ -26,7 +26,7 @@ interface DataTableProps<T> {
   onRowClick?: (item: T) => void;
 }
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends Record<string, unknown>>({
   data,
   columns,
   loading = false,
@@ -67,7 +67,7 @@ export function DataTable<T extends Record<string, any>>({
               onClick={() => onRowClick?.(item)}
             >
               {columns.map((column) => {
-                const value = column.key.split('.').reduce((obj, key) => obj?.[key], item);
+                const value = column.key.split('.').reduce((obj: Record<string, unknown> | undefined, key: string) => obj?.[key] as Record<string, unknown> | undefined, item as Record<string, unknown>);
                 return (
                   <TableCell key={column.key} className={column.className}>
                     {column.render ? column.render(value, item) : (value as unknown as React.ReactNode)}

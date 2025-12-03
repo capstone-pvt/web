@@ -35,13 +35,16 @@ export async function GET(
       fullName: user.fullName,
       isActive: user.isActive,
       isEmailVerified: user.isEmailVerified,
-      roles: user.roles.map((r: any) => ({
-        id: r._id.toString(),
-        name: r.name,
-        displayName: r.displayName,
-        description: r.description,
-        hierarchy: r.hierarchy
-      })),
+      roles: user.roles.map((r: unknown) => {
+        const role = r as { _id: { toString: () => string }; name: string; displayName: string; description: string; hierarchy: number };
+        return {
+          id: role._id.toString(),
+          name: role.name,
+          displayName: role.displayName,
+          description: role.description,
+          hierarchy: role.hierarchy
+        };
+      }),
       createdAt: user.createdAt.toISOString(),
       lastLoginAt: user.lastLoginAt?.toISOString()
     };
@@ -88,16 +91,20 @@ export async function PATCH(
       lastName: user.lastName,
       fullName: user.fullName,
       isActive: user.isActive,
-      roles: user.roles.map((r: any) => ({
-        id: r._id.toString(),
-        name: r.name,
-        displayName: r.displayName,
-        hierarchy: r.hierarchy
-      }))
+      roles: user.roles.map((r: unknown) => {
+        const role = r as { _id: { toString: () => string }; name: string; displayName: string; hierarchy: number };
+        return {
+          id: role._id.toString(),
+          name: role.name,
+          displayName: role.displayName,
+          hierarchy: role.hierarchy
+        };
+      })
     };
 
     return successResponse({ user: userResponse }, 'User updated successfully');
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     // Log failed user update
     const { id } = await params;
     const authRequest = await authenticateRequest(request).catch(() => null);
@@ -105,7 +112,7 @@ export async function PATCH(
       await logAuthenticatedAction(authRequest, 'users.update', 'users', {
         resourceId: id,
         status: 'failure',
-        errorMessage: error.message
+        errorMessage: err.message
       });
     }
     return errorResponse(error);
@@ -138,7 +145,8 @@ export async function DELETE(
     });
 
     return successResponse(null, 'User deleted successfully');
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     // Log failed user deletion
     const { id } = await params;
     const authRequest = await authenticateRequest(request).catch(() => null);
@@ -146,7 +154,7 @@ export async function DELETE(
       await logAuthenticatedAction(authRequest, 'users.delete', 'users', {
         resourceId: id,
         status: 'failure',
-        errorMessage: error.message
+        errorMessage: err.message
       });
     }
     return errorResponse(error);
