@@ -1,31 +1,29 @@
 import { NextRequest } from 'next/server';
 import AuthService from '@/lib/services/auth.service';
 import { loginSchema } from '@/lib/utils/validation';
-import { ValidationError } from '@/lib/utils/errors';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { setAuthCookies } from '@/lib/utils/cookies';
 import { loginRateLimit } from '@/lib/middleware/rateLimit.middleware';
 import { getDeviceInfo } from '@/lib/middleware/auth.middleware';
 import { logLogin } from '@/lib/utils/auditLogger';
+import { validateBody } from '@/lib/middleware/validation.middleware';
 
 export async function POST(request: NextRequest) {
   try {
     await loginRateLimit(request);
 
-    const body = await request.json();
-
-    const validationResult = loginSchema.safeParse(body);
-    if (!validationResult.success) {
-      throw new ValidationError('Validation failed', validationResult.error.errors);
+    const validationError = await validateBody(loginSchema)(request);
+    if (validationError) {
+      return errorResponse(validationError);
     }
 
-    const credentials = validationResult.data;
+    const body = await request.json();
     const deviceInfo = getDeviceInfo(request);
 
-    const { user, accessToken, refreshToken } = await AuthService.login(credentials, deviceInfo);
+    const { user, accessToken, refreshToken } = await AuthService.login(body, deviceInfo);
 
     // Log successful login
-    await logLogin(request, credentials.email, user._id.toString());
+    await logLogin(request, body.email, user._id.toString());
 
     const permissions = user.roles.flatMap((role: unknown) => {
       const r = role as { permissions: unknown[] };
@@ -65,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     const response = successResponse({ user: userResponse }, 'Login successful');
 
-    setAuthCookies(response, accessToken, refreshToken, credentials.rememberMe || false);
+    setAuthCookies(response, accessToken, refreshToken, body.rememberMe || false);
 
     return response;
   } catch (error) {

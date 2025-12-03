@@ -5,6 +5,7 @@ import { ValidationError } from '@/lib/utils/errors';
 import { successResponse, errorResponse } from '@/lib/utils/api-response';
 import { registerRateLimit } from '@/lib/middleware/rateLimit.middleware';
 import { logRegistration } from '@/lib/utils/auditLogger';
+import { EmailService } from '@/lib/services/email.service';
 
 export async function POST(request: NextRequest) {
   let email: string | undefined;
@@ -26,6 +27,9 @@ export async function POST(request: NextRequest) {
 
     // Log successful registration
     await logRegistration(request, user.email, user._id.toString(), true);
+
+    // Send welcome email
+    await EmailService.sendWelcomeEmail(user.email, user.firstName);
 
     const userResponse = {
       id: user._id.toString(),

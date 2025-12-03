@@ -1,44 +1,67 @@
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-  rememberMe: z.boolean().optional()
-});
-
-export const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Password must contain at least one special character'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required')
-});
-
-export const updateUserSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  roles: z.array(z.string()).optional(),
-  isActive: z.boolean().optional()
-});
-
-export const createRoleSchema = z.object({
-  name: z.string().min(1, 'Role name is required'),
-  displayName: z.string().min(1, 'Display name is required'),
-  description: z.string().min(1, 'Description is required'),
-  hierarchy: z.number().int().positive('Hierarchy must be a positive integer'),
-  permissions: z.array(z.string())
+  email: z.string().email(),
+  password: z.string().min(8),
+  rememberMe: z.boolean().optional(),
 });
 
 export const createUserSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  roles: z.array(z.string())
+  email: z.string().email(),
+  password: z.string().min(8),
+  firstName: z.string(),
+  lastName: z.string(),
+  roles: z.array(z.string()),
+});
+
+export const updateUserSchema = z.object({
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  email: z.string().email().optional(),
+  roles: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const createPermissionSchema = z.object({
+  name: z.string(),
+  displayName: z.string(),
+  description: z.string(),
+  resource: z.string(),
+  action: z.string(),
+  category: z.string(),
+});
+
+export const updatePermissionSchema = z.object({
+  name: z.string().optional(),
+  displayName: z.string().optional(),
+  description: z.string().optional(),
+  resource: z.string().optional(),
+  action: z.string().optional(),
+  category: z.string().optional(),
+});
+
+export const createRoleSchema = z.object({
+  name: z.string(),
+  displayName: z.string(),
+  description: z.string(),
+  hierarchy: z.number(),
+  permissions: z.array(z.string()),
+});
+
+export const updateRoleSchema = z.object({
+  displayName: z.string().optional(),
+  description: z.string().optional(),
+  hierarchy: z.number().optional(),
+  permissions: z.array(z.string()).optional(),
+});
+
+export const updateSettingsSchema = z.object({
+  companyName: z.string().optional(),
+  companyLogo: z.string().optional(),
+  jwt_access_token_secret: z.string().optional(),
+  jwt_access_token_expires_in: z.string().optional(),
+  jwt_refresh_token_secret: z.string().optional(),
+  jwt_refresh_token_expires_in: z.string().optional(),
+  maxLoginAttempts: z.number().optional(),
+  lockoutDuration: z.number().optional(),
 });
