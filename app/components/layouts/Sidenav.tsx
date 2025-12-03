@@ -24,7 +24,7 @@ const navigation = [
     permission: PERMISSIONS.SETTINGS_VIEW,
     children: [
       { name: 'General', href: '/admin/settings', permission: PERMISSIONS.SETTINGS_MANAGE },
-      { name: 'System', href: '/admin/system', permission: PERMISSIONS.SYSTEM_MANAGE },
+      { name: 'System', href: '/admin/system', permission: PERMISSIONS.SETTINGS_MANAGE },
       { name: 'Users', href: '/admin/users', permission: PERMISSIONS.USERS_READ },
       { name: 'Roles', href: '/admin/roles', permission: PERMISSIONS.ROLES_READ },
       { name: 'Permissions', href: '/admin/permissions', permission: PERMISSIONS.PERMISSIONS_MANAGE },
@@ -44,10 +44,7 @@ export default function Sidenav() {
   return (
     <aside className="w-64 bg-gray-800 dark:bg-gray-900 text-white flex flex-col">
       <div className="p-4 border-b border-gray-700 flex items-center gap-3">
-        {settings?.appLogo && (
-          <Image src={settings.appLogo} alt="App Logo" width={32} height={32} />
-        )}
-        <h2 className="text-2xl font-bold">{settings?.appName || 'RBAC App'}</h2>
+        <h2 className="text-2xl font-bold">{settings?.siteName || 'RBAC App'}</h2>
       </div>
       <nav className="flex-1 p-4 space-y-2">
         <Accordion type="multiple" className="w-full">

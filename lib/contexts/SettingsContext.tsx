@@ -1,25 +1,24 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from '@/lib/api/axios';
-import { ISetting } from '@/lib/db/models/Setting';
+import { Settings, settingsApi } from '@/lib/api/settings.api';
 
 interface SettingsContextType {
-  settings: ISetting | null;
+  settings: Settings | null;
   loading: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<ISetting | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await axios.get('/api/settings');
-        setSettings(res.data.data.settings);
+        const { settings: settingsData } = await settingsApi.get();
+        setSettings(settingsData);
       } catch (error) {
         console.error('Failed to fetch settings', error);
       } finally {

@@ -13,7 +13,7 @@ export default function SystemSettingsPage() {
   }, [setTitle]);
 
   return (
-    <PermissionGate permission={PERMISSIONS.SYSTEM_MANAGE}>
+    <PermissionGate permission={PERMISSIONS.SETTINGS_MANAGE}>
       <div className="container mx-auto p-4">
         <p>System settings content goes here.</p>
       </div>

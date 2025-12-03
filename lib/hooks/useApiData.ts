@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import axios from '@/lib/api/axios';
 import { ApiState } from '@/types/ui.types';
 
@@ -24,16 +25,26 @@ export function useApiData<T>(
       const response = await axios.get(url);
       return response.data.success ? response.data.data : response.data;
     },
-    onSuccess,
-    onError: (err) => {
-      const axiosError = err as { response?: { data?: { error?: { message?: string } } }; message?: string };
+  });
+
+  // Handle success callback
+  useEffect(() => {
+    if (data && onSuccess) {
+      onSuccess(data);
+    }
+  }, [data, onSuccess]);
+
+  // Handle error callback
+  useEffect(() => {
+    if (error && onError) {
+      const axiosError = error as any;
       const errorMessage =
         axiosError.response?.data?.error?.message ||
         axiosError.message ||
         'An error occurred';
-      onError?.(errorMessage);
-    },
-  });
+      onError(errorMessage);
+    }
+  }, [error, onError]);
 
   const setData = (newData: T | null) => {
     queryClient.setQueryData(Array.isArray(queryKey) ? queryKey : [queryKey], newData);

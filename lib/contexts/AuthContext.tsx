@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import axios from '@/lib/api/axios';
 import { useRouter } from 'next/navigation';
+import { authApi } from '@/lib/api';
 import { AuthContextType, AuthUser, LoginCredentials, RegisterData } from '@/types/auth.types';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,10 +16,13 @@ export function AuthProvider({ children }: Readonly<{
 
   const refreshUser = useCallback(async () => {
     try {
-      const response = await axios.get('/api/auth/me');
-      if (response.data.success) {
-        setUser(response.data.data.user);
-      }
+      const { user: userData } = await authApi.me();
+      // Transform API User to AuthUser by adding fullName
+      const authUser: AuthUser = {
+        ...userData,
+        fullName: `${userData.firstName} ${userData.lastName}`,
+      };
+      setUser(authUser);
     } catch {
       setUser(null);
     } finally {
@@ -33,35 +36,29 @@ export function AuthProvider({ children }: Readonly<{
 
   const login = async (credentials: LoginCredentials) => {
     try {
-      const response = await axios.post('/api/auth/login', credentials);
-      if (response.data.success) {
-        // After successful login and cookies are set, refresh the user data
-        // This will update the AuthContext state with the latest user and permissions
-        await refreshUser();
-        router.push('/dashboard');
-      }
-    } catch (err) {
-      const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
-      throw new Error(axiosError.response?.data?.error?.message || 'Login failed');
+      await authApi.login(credentials);
+      // After successful login and cookies are set, refresh the user data
+      // This will update the AuthContext state with the latest user and permissions
+      await refreshUser();
+      router.push('/dashboard');
+    } catch (err: any) {
+      throw new Error(err.message || 'Login failed');
     }
   };
 
   const register = async (data: RegisterData) => {
     try {
-      const response = await axios.post('/api/auth/register', data);
-      if (response.data.success) {
-        // After registration, login automatically
-        await login({ email: data.email, password: data.password });
-      }
-    } catch (err) {
-      const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
-      throw new Error(axiosError.response?.data?.error?.message || 'Registration failed');
+      await authApi.register(data);
+      // After registration, login automatically
+      await login({ email: data.email, password: data.password });
+    } catch (err: any) {
+      throw new Error(err.message || 'Registration failed');
     }
   };
 
   const logout = async () => {
     try {
-      await axios.post('/api/auth/logout');
+      await authApi.logout();
     } catch (err) {
       console.error('Logout error:', err);
     } finally {

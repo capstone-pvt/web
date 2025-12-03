@@ -126,7 +126,6 @@ export default function UsersPage() {
         </Badge>
       ),
     },
-    .
     {
       key: 'lastLoginAt',
       label: 'Last Login',
