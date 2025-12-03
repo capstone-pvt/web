@@ -57,10 +57,12 @@ export default function ActivityPage() {
         ...(statusFilter && { status: statusFilter })
       });
       const response = await axiosInstance.get(`/audit-logs?${params}`);
-      // After interceptor, response.data is unwrapped
-      setRecentActivity(response.data.logs);
+
+      // After interceptor, response.data is unwrapped to { logs, pagination }
+      setRecentActivity(response.data?.logs || []);
     } catch (error) {
       console.error('Error fetching activity:', error);
+      setRecentActivity([]);
     } finally {
       setLoading(false);
     }
@@ -70,10 +72,12 @@ export default function ActivityPage() {
     try {
       setStatsLoading(true);
       const response = await axiosInstance.get('/audit-logs/statistics');
-      // After interceptor, response.data is unwrapped
-      setStatistics(response.data.statistics);
+
+      // After interceptor, response.data is unwrapped to { statistics }
+      setStatistics(response.data?.statistics || null);
     } catch (error) {
       console.error('Error fetching statistics:', error);
+      setStatistics(null);
     } finally {
       setStatsLoading(false);
     }
