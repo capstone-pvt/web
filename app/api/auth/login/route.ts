@@ -12,12 +12,11 @@ export async function POST(request: NextRequest) {
   try {
     await loginRateLimit(request);
 
-    const validationError = await validateBody(loginSchema)(request);
+    const { data: body, error: validationError } = await validateBody(loginSchema)(request);
     if (validationError) {
       return errorResponse(validationError);
     }
 
-    const body = await request.json();
     const deviceInfo = getDeviceInfo(request);
 
     const { user, accessToken, refreshToken } = await AuthService.login(body, deviceInfo);
