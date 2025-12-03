@@ -21,6 +21,7 @@ import {
 import { PlusIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
 import { toast } from 'sonner';
 import { useHeader } from '@/lib/contexts/HeaderContext';
+import { useSystemAdmin } from '@/lib/hooks/useSystemAdmin';
 
 interface Permission extends Record<string, unknown> {
   _id: string;
@@ -45,6 +46,7 @@ interface PermissionFormData {
 
 export default function PermissionsPage() {
   const { setTitle } = useHeader();
+  const isSystemAdmin = useSystemAdmin();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -71,7 +73,6 @@ export default function PermissionsPage() {
     try {
       setLoading(true);
       const response = await axiosInstance.get('/permissions');
-      // After interceptor, response.data is unwrapped
       setPermissions(response.data.permissions);
     } catch (error) {
       console.error('Error fetching permissions:', error);
@@ -82,6 +83,10 @@ export default function PermissionsPage() {
   };
 
   const handleCreate = async () => {
+    if (!isSystemAdmin) {
+      toast.error('Only System Administrators can create permissions.');
+      return;
+    }
     try {
       await axiosInstance.post('/permissions', formData);
       toast.success('Permission created successfully');
@@ -96,6 +101,10 @@ export default function PermissionsPage() {
 
   const handleUpdate = async () => {
     if (!editingPermission) return;
+    if (editingPermission.isSystemPermission && !isSystemAdmin) {
+      toast.error('Only System Administrators can update system permissions.');
+      return;
+    }
 
     try {
       await axiosInstance.put(`/permissions/${editingPermission._id}`, formData);
@@ -111,6 +120,12 @@ export default function PermissionsPage() {
   };
 
   const handleDelete = async (permissionId: string) => {
+    const permission = permissions.find(p => p._id === permissionId);
+    if (permission?.isSystemPermission && !isSystemAdmin) {
+      toast.error('Only System Administrators can delete system permissions.');
+      return;
+    }
+
     if (!confirm('Are you sure you want to delete this permission?')) return;
 
     try {
@@ -206,7 +221,7 @@ export default function PermissionsPage() {
               variant="ghost"
               size="sm"
               onClick={() => openEditDialog(permission)}
-              disabled={permission.isSystemPermission}
+              disabled={permission.isSystemPermission && !isSystemAdmin}
             >
               <Pencil1Icon className="h-4 w-4" />
             </Button>
@@ -216,7 +231,7 @@ export default function PermissionsPage() {
               variant="ghost"
               size="sm"
               onClick={() => handleDelete(permission._id)}
-              disabled={permission.isSystemPermission}
+              disabled={permission.isSystemPermission && !isSystemAdmin}
             >
               <TrashIcon className="h-4 w-4" />
             </Button>
@@ -231,7 +246,7 @@ export default function PermissionsPage() {
       <div className="space-y-6">
         <div className="flex justify-end">
             <PermissionGate permission={PERMISSIONS.PERMISSIONS_MANAGE}>
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Button onClick={() => setIsCreateDialogOpen(true)} disabled={!isSystemAdmin}>
                 <PlusIcon className="mr-2 h-4 w-4" />
                 Create Permission
               </Button>
@@ -259,7 +274,7 @@ export default function PermissionsPage() {
             <DialogHeader>
               <DialogTitle>Create New Permission</DialogTitle>
               <DialogDescription>
-                Add a new permission to the system. System permissions cannot be modified.
+                Add a new permission to the system. Only System Administrators can create new permissions.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -367,7 +382,7 @@ export default function PermissionsPage() {
             <DialogHeader>
               <DialogTitle>Edit Permission</DialogTitle>
               <DialogDescription>
-                Update permission details. System permissions cannot be modified.
+                Update permission details. System permissions can only be modified by System Administrators.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
