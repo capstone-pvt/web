@@ -1,4 +1,5 @@
 import axiosInstance, { ApiResponse } from './axios';
+import { Permission } from './permissions.api';
 
 export interface Role {
   _id: string;
@@ -6,7 +7,7 @@ export interface Role {
   displayName: string;
   description?: string;
   hierarchy: number;
-  permissions: any[];
+  permissions: Permission[];
   isSystemRole: boolean;
   createdAt: string;
   updatedAt: string;
@@ -34,7 +35,7 @@ export const rolesApi = {
    */
   getAll: async (): Promise<{ roles: Role[] }> => {
     const response = await axiosInstance.get<ApiResponse<{ roles: Role[] }>>('/roles');
-    return response.data as any;
+    return response.data as unknown as { roles: Role[] };
   },
 
   /**
@@ -42,7 +43,7 @@ export const rolesApi = {
    */
   getById: async (id: string): Promise<{ role: Role }> => {
     const response = await axiosInstance.get<ApiResponse<{ role: Role }>>(`/roles/${id}`);
-    return response.data as any;
+    return response.data as unknown as { role: Role };
   },
 
   /**
@@ -50,7 +51,7 @@ export const rolesApi = {
    */
   create: async (data: CreateRoleDto): Promise<{ role: Role }> => {
     const response = await axiosInstance.post<ApiResponse<{ role: Role }>>('/roles', data);
-    return response.data as any;
+    return response.data as unknown as { role: Role };
   },
 
   /**
@@ -58,7 +59,7 @@ export const rolesApi = {
    */
   update: async (id: string, data: UpdateRoleDto): Promise<{ role: Role }> => {
     const response = await axiosInstance.put<ApiResponse<{ role: Role }>>(`/roles/${id}`, data);
-    return response.data as any;
+    return response.data as unknown as { role: Role };
   },
 
   /**

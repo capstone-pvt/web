@@ -1,4 +1,5 @@
 import axiosInstance, { ApiResponse } from './axios';
+import { Role } from './roles.api';
 
 export interface User {
   _id: string;
@@ -6,7 +7,7 @@ export interface User {
   lastName: string;
   email: string;
   isActive: boolean;
-  roles: any[];
+  roles: Role[];
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;

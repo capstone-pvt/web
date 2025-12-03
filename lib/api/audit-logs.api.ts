@@ -6,7 +6,7 @@ export interface AuditLog {
   action: string;
   resource: string;
   resourceId?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   ipAddress: string;
   userAgent: string;
   createdAt: string;

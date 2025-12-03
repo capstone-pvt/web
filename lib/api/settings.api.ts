@@ -41,7 +41,7 @@ export const settingsApi = {
    */
   get: async (): Promise<{ settings: Settings }> => {
     const response = await axiosInstance.get<ApiResponse<{ settings: Settings }>>('/settings');
-    return response.data as any;
+    return response.data as unknown as { settings: Settings };
   },
 
   /**
@@ -49,6 +49,6 @@ export const settingsApi = {
    */
   update: async (data: UpdateSettingsDto): Promise<{ settings: Settings }> => {
     const response = await axiosInstance.put<ApiResponse<{ settings: Settings }>>('/settings', data);
-    return response.data as any;
+    return response.data as unknown as { settings: Settings };
   },
 };

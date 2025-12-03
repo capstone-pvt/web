@@ -37,7 +37,15 @@ export function useApiData<T>(
   // Handle error callback
   useEffect(() => {
     if (error && onError) {
-      const axiosError = error as any;
+      const axiosError = error as Error & {
+        response?: {
+          data?: {
+            error?: {
+              message?: string;
+            };
+          };
+        };
+      };
       const errorMessage =
         axiosError.response?.data?.error?.message ||
         axiosError.message ||

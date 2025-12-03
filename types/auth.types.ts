@@ -1,5 +1,4 @@
-// import { Permission } from './permission.types';
-import { Role } from './role.types';
+import { Role } from '@/lib/api/roles.api';
 
 export interface LoginCredentials {
   email: string;

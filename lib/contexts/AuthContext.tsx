@@ -41,8 +41,9 @@ export function AuthProvider({ children }: Readonly<{
       // This will update the AuthContext state with the latest user and permissions
       await refreshUser();
       router.push('/dashboard');
-    } catch (err: any) {
-      throw new Error(err.message || 'Login failed');
+    } catch (err) {
+      const error = err as Error;
+      throw new Error(error.message || 'Login failed');
     }
   };
 
@@ -51,8 +52,9 @@ export function AuthProvider({ children }: Readonly<{
       await authApi.register(data);
       // After registration, login automatically
       await login({ email: data.email, password: data.password });
-    } catch (err: any) {
-      throw new Error(err.message || 'Registration failed');
+    } catch (err) {
+      const error = err as Error;
+      throw new Error(error.message || 'Registration failed');
     }
   };
 

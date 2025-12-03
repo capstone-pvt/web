@@ -1,11 +1,16 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 // API Response format from NestJS backend
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
   data?: T;
   error?: string;
+}
+
+// Extended request config with retry flag
+interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
 }
 
 const axiosInstance = axios.create({
@@ -41,7 +46,7 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error: AxiosError<ApiResponse>) => {
-    const originalRequest = error.config as any;
+    const originalRequest = error.config as ExtendedAxiosRequestConfig;
 
     // If 401 and not a retry or refresh request, try refreshing
     if (

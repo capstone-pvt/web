@@ -24,7 +24,7 @@ export const permissionsApi = {
         params: grouped ? { grouped: 'true' } : undefined,
       }
     );
-    return response.data as any;
+    return response.data as unknown as { permissions: Permission[] | Record<string, Permission[]> };
   },
 
   /**
@@ -32,6 +32,6 @@ export const permissionsApi = {
    */
   getById: async (id: string): Promise<{ permission: Permission }> => {
     const response = await axiosInstance.get<ApiResponse<{ permission: Permission }>>(`/permissions/${id}`);
-    return response.data as any;
+    return response.data as unknown as { permission: Permission };
   },
 };
