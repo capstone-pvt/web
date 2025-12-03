@@ -12,6 +12,15 @@ import {
 } from '@/app/components/ui/accordion';
 import { Button } from '@/app/components/ui/button';
 import { Checkbox } from '@/app/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/app/components/ui/dialog';
+import { Input } from '@/app/components/ui/input';
+import { PlusIcon } from '@radix-ui/react-icons';
 import { toast } from 'sonner';
 import { useHeader } from '@/lib/contexts/HeaderContext';
 
@@ -33,7 +42,16 @@ interface Role {
   description: string;
   hierarchy: number;
   permissions: Permission[];
+  isSystemRole: boolean;
   userCount?: number;
+}
+
+interface CreateRoleFormData {
+  name: string;
+  displayName: string;
+  description: string;
+  hierarchy: number;
+  permissions: string[];
 }
 
 // Child Component for rendering a category of permissions
@@ -58,7 +76,7 @@ const PermissionCategory = ({ category, perms, roleId, checkedPermissions, onPer
           />
           <label
             htmlFor={`perm-${roleId}-${perm._id}`}
-            className="text-sm font-medium text-gray-800 dark:text-gray-200"
+            className="text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer"
           >
             {perm.displayName}
           </label>
@@ -69,12 +87,13 @@ const PermissionCategory = ({ category, perms, roleId, checkedPermissions, onPer
 );
 
 // Child Component for a single role's accordion item
-const RoleAccordionItem = ({ role, groupedPermissions, editingPermissions, onPermissionChange, onSaveChanges }: {
+const RoleAccordionItem = ({ role, groupedPermissions, editingPermissions, onPermissionChange, onSaveChanges, onDelete }: {
   role: Role;
   groupedPermissions: Record<string, Permission[]>;
   editingPermissions: string[];
   onPermissionChange: (roleId: string, permissionId: string, checked: boolean) => void;
   onSaveChanges: (roleId: string) => void;
+  onDelete: (roleId: string) => void;
 }) => (
   <AccordionItem value={role._id} key={role._id}>
     <AccordionTrigger>
@@ -86,6 +105,11 @@ const RoleAccordionItem = ({ role, groupedPermissions, editingPermissions, onPer
           <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
             Hierarchy: {role.hierarchy}
           </span>
+          {role.isSystemRole && (
+            <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+              System Role
+            </span>
+          )}
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
           {role.description}
@@ -99,6 +123,13 @@ const RoleAccordionItem = ({ role, groupedPermissions, editingPermissions, onPer
     </AccordionTrigger>
     <AccordionContent>
       <div className="border-t border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-750">
+        {role.isSystemRole && (
+          <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              ⚠️ This is a system role. Modifications to system roles are restricted.
+            </p>
+          </div>
+        )}
         <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
           Edit Permissions
         </h4>
@@ -114,7 +145,15 @@ const RoleAccordionItem = ({ role, groupedPermissions, editingPermissions, onPer
             />
           ))}
         </div>
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-between">
+          <PermissionGate permission={PERMISSIONS.ROLES_DELETE}>
+            <Button
+              variant="destructive"
+              onClick={() => onDelete(role._id)}
+            >
+              Delete Role
+            </Button>
+          </PermissionGate>
           <PermissionGate permission={PERMISSIONS.ROLES_UPDATE}>
             <Button onClick={() => onSaveChanges(role._id)}>
               Save Changes
@@ -134,6 +173,14 @@ export default function RolesPage() {
   const [loading, setLoading] = useState(true);
   const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>();
   const [editingPermissions, setEditingPermissions] = useState<Record<string, string[]>>({});
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [createFormData, setCreateFormData] = useState<CreateRoleFormData>({
+    name: '',
+    displayName: '',
+    description: '',
+    hierarchy: 1,
+    permissions: [],
+  });
 
   useEffect(() => {
     setTitle('Role Management');
@@ -163,6 +210,7 @@ export default function RolesPage() {
       setAllPermissions(permissionsRes.data.permissions);
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error('Failed to load roles and permissions');
     } finally {
       setLoading(false);
     }
@@ -180,15 +228,119 @@ export default function RolesPage() {
   };
 
   const handleSaveChanges = async (roleId: string) => {
+    // Find the role to check if it's a system role
+    const role = roles.find(r => r._id === roleId);
+  debugger
+    if (role?.isSystemRole) {
+      toast.error('Cannot update system roles. System roles are protected and cannot be modified.');
+      return;
+    }
+
     try {
       const permissionsToSave = editingPermissions[roleId] || [];
-      await axiosInstance.put(`/roles/${roleId}`, { permissions: permissionsToSave });
+
+      const payload = { permissions: permissionsToSave };
+
+      await axiosInstance.put(`/roles/${roleId}`, payload);
+
       toast.success('Role updated successfully');
-      fetchData();
-    } catch (error) {
-      toast.error('Failed to update role');
+      await fetchData();
+    } catch (error: any) {
       console.error('Error updating role:', error);
+      console.error('Error response data:', error.response?.data);
+
+      const errorMessage =
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to update role';
+
+      toast.error(errorMessage);
     }
+  };
+
+  const handleDelete = async (roleId: string) => {
+    // Find the role to check if it's a system role
+    const role = roles.find(r => r._id === roleId);
+
+    if (role?.isSystemRole) {
+      toast.error('Cannot delete system roles. System roles are protected and cannot be removed.');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this role? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await axiosInstance.delete(`/roles/${roleId}`);
+      toast.success('Role deleted successfully');
+      await fetchData();
+    } catch (error: any) {
+      console.error('Error deleting role:', error);
+
+      const errorMessage =
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to delete role';
+
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleCreateRole = async () => {
+    // Validation
+    if (!createFormData.name || !createFormData.displayName) {
+      toast.error('Name and Display Name are required');
+      return;
+    }
+
+    if (createFormData.hierarchy < 1) {
+      toast.error('Hierarchy must be at least 1');
+      return;
+    }
+
+    try {
+      await axiosInstance.post('/roles', createFormData);
+      toast.success('Role created successfully');
+      setIsCreateDialogOpen(false);
+      resetCreateForm();
+      await fetchData();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create role';
+      toast.error(errorMessage);
+      console.error('Error creating role:', error);
+    }
+  };
+
+  const resetCreateForm = () => {
+    setCreateFormData({
+      name: '',
+      displayName: '',
+      description: '',
+      hierarchy: 1,
+      permissions: [],
+    });
+  };
+
+  const handleCreateFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCreateFormData(prev => ({
+      ...prev,
+      [name]: name === 'hierarchy' ? parseInt(value) || 1 : value,
+    }));
+  };
+
+  const handleCreatePermissionToggle = (permissionId: string) => {
+    setCreateFormData(prev => ({
+      ...prev,
+      permissions: prev.permissions.includes(permissionId)
+        ? prev.permissions.filter(id => id !== permissionId)
+        : [...prev.permissions, permissionId],
+    }));
   };
 
   const groupedAllPermissions = allPermissions.reduce((acc, perm) => {
@@ -232,6 +384,7 @@ export default function RolesPage() {
             editingPermissions={editingPermissions[role._id] || []}
             onPermissionChange={handlePermissionChange}
             onSaveChanges={handleSaveChanges}
+            onDelete={handleDelete}
           />
         ))}
       </Accordion>
@@ -240,7 +393,132 @@ export default function RolesPage() {
 
   return (
     <PermissionGate permission={PERMISSIONS.ROLES_READ}>
-      <div className="space-y-4">{renderContent()}</div>
+      <div className="space-y-4">
+        <div className="flex justify-end">
+          <PermissionGate permission={PERMISSIONS.ROLES_CREATE}>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <PlusIcon className="mr-2 h-4 w-4" />
+              Create Role
+            </Button>
+          </PermissionGate>
+        </div>
+
+        {renderContent()}
+
+        {/* Create Role Dialog */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New Role</DialogTitle>
+              <DialogDescription>
+                Create a new role with specific permissions and hierarchy level.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="name" className="text-sm font-medium">
+                    Role Name * (e.g., editor)
+                  </label>
+                  <Input
+                    id="name"
+                    name="name"
+                    placeholder="editor"
+                    value={createFormData.name}
+                    onChange={handleCreateFormChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="displayName" className="text-sm font-medium">
+                    Display Name * (e.g., Editor)
+                  </label>
+                  <Input
+                    id="displayName"
+                    name="displayName"
+                    placeholder="Editor"
+                    value={createFormData.displayName}
+                    onChange={handleCreateFormChange}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium">
+                  Description
+                </label>
+                <Input
+                  id="description"
+                  name="description"
+                  placeholder="Brief description of this role"
+                  value={createFormData.description}
+                  onChange={handleCreateFormChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="hierarchy" className="text-sm font-medium">
+                  Hierarchy Level * (1 = highest)
+                </label>
+                <Input
+                  id="hierarchy"
+                  name="hierarchy"
+                  type="number"
+                  min="1"
+                  placeholder="1"
+                  value={createFormData.hierarchy}
+                  onChange={handleCreateFormChange}
+                  required
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Lower numbers have higher priority (1 is the highest level)
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-sm font-medium">Assign Permissions</label>
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 max-h-[300px] overflow-y-auto space-y-4">
+                  {Object.entries(groupedAllPermissions).map(([category, perms]) => (
+                    <div key={category}>
+                      <h5 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                        {category}
+                      </h5>
+                      <div className="grid grid-cols-2 gap-2">
+                        {perms.map((perm) => (
+                          <div key={perm._id} className="flex items-center gap-2">
+                            <Checkbox
+                              id={`create-perm-${perm._id}`}
+                              checked={createFormData.permissions.includes(perm._id)}
+                              onCheckedChange={() => handleCreatePermissionToggle(perm._id)}
+                            />
+                            <label
+                              htmlFor={`create-perm-${perm._id}`}
+                              className="text-sm text-gray-800 dark:text-gray-200 cursor-pointer"
+                            >
+                              {perm.displayName}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsCreateDialogOpen(false);
+                  resetCreateForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreateRole}>Create Role</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </PermissionGate>
   );
 }
