@@ -9,6 +9,8 @@ export async function seedSettings() {
   if (!existingSettings) {
     console.log('Seeding default settings...');
     const defaultSettings: Partial<ISetting> = {
+      appName: 'RBAC App',
+      appLogo: '',
       companyName: 'My Company',
       companyLogo: '',
       jwt_access_token_secret: 'supersecretjwtaccesskey', // IMPORTANT: Change this in production

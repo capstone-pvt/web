@@ -1,25 +1,29 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ISetting extends Document {
+  appName: string;
+  appLogo: string;
   companyName: string;
-  companyLogo?: string;
+  companyLogo: string;
   jwt_access_token_secret: string;
   jwt_access_token_expires_in: string;
   jwt_refresh_token_secret: string;
   jwt_refresh_token_expires_in: string;
   maxLoginAttempts: number;
-  lockoutDuration: number; // in minutes
+  lockoutDuration: number;
 }
 
 const SettingSchema = new Schema<ISetting>({
-  companyName: { type: String, required: true, default: 'My Company' },
-  companyLogo: { type: String },
-  jwt_access_token_secret: { type: String, required: true, default: 'your-access-token-secret' },
-  jwt_access_token_expires_in: { type: String, required: true, default: '15m' },
-  jwt_refresh_token_secret: { type: String, required: true, default: 'your-refresh-token-secret' },
-  jwt_refresh_token_expires_in: { type: String, required: true, default: '7d' },
-  maxLoginAttempts: { type: Number, required: true, default: 5 },
-  lockoutDuration: { type: Number, required: true, default: 15 },
+  appName: { type: String, default: 'RBAC App' },
+  appLogo: { type: String, default: '' },
+  companyName: { type: String, default: 'My Company' },
+  companyLogo: { type: String, default: '' },
+  jwt_access_token_secret: { type: String, required: true },
+  jwt_access_token_expires_in: { type: String, required: true },
+  jwt_refresh_token_secret: { type: String, required: true },
+  jwt_refresh_token_expires_in: { type: String, required: true },
+  maxLoginAttempts: { type: Number, default: 5 },
+  lockoutDuration: { type: Number, default: 15 },
 }, {
   timestamps: true,
 });

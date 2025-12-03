@@ -6,30 +6,22 @@ import { ISetting } from '@/lib/db/models/Setting';
 import PermissionGate from '@/app/components/guards/PermissionGate';
 import { PERMISSIONS } from '@/config/permissions';
 import { useHeader } from '@/lib/contexts/HeaderContext';
+import { useSettings } from '@/lib/contexts/SettingsContext';
 
 const SettingsPage = () => {
   const { setTitle } = useHeader();
-  const [settings, setSettings] = useState<ISetting | null>(null);
+  const { settings, loading } = useSettings();
   const [formData, setFormData] = useState<Partial<ISetting>>({});
 
   useEffect(() => {
     setTitle('Application Settings');
   }, [setTitle]);
 
-  const fetchSettings = async () => {
-    const res = await axios.get('/api/settings');
-    setSettings(res.data.data.settings);
-    setFormData(res.data.data.settings || {});
-  };
-
   useEffect(() => {
-    const loadSettings = async () => {
-      const res = await axios.get('/api/settings');
-      setSettings(res.data.data.settings);
-      setFormData(res.data.data.settings || {});
-    };
-    loadSettings();
-  }, []);
+    if (settings) {
+      setFormData(settings);
+    }
+  }, [settings]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -43,7 +35,6 @@ const SettingsPage = () => {
     e.preventDefault();
     try {
       await axios.put('/api/settings', formData);
-      fetchSettings();
       alert('Settings updated successfully!');
     } catch (error) {
       console.error('Failed to update settings', error);
@@ -51,7 +42,7 @@ const SettingsPage = () => {
     }
   };
 
-  if (!settings) {
+  if (loading) {
     return <div>Loading settings...</div>;
   }
 
@@ -59,6 +50,32 @@ const SettingsPage = () => {
     <PermissionGate permission={PERMISSIONS.SETTINGS_MANAGE}>
       <div className="container mx-auto p-4">
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="appName" className="block text-sm font-medium text-gray-700">
+              App Name
+            </label>
+            <input
+              type="text"
+              name="appName"
+              id="appName"
+              value={formData.appName || ''}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            />
+          </div>
+          <div>
+            <label htmlFor="appLogo" className="block text-sm font-medium text-gray-700">
+              App Logo URL
+            </label>
+            <input
+              type="text"
+              name="appLogo"
+              id="appLogo"
+              value={formData.appLogo || ''}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            />
+          </div>
           <div>
             <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
               Company Name

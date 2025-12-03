@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { useSettings } from '@/lib/contexts/SettingsContext';
 import { PERMISSIONS } from '@/config/permissions';
 import {
   Accordion,
@@ -10,6 +11,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/app/components/ui/accordion';
+import Image from 'next/image';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -33,6 +35,7 @@ const navigation = [
 export default function Sidenav() {
   const pathname = usePathname();
   const { hasPermission } = useAuth();
+  const { settings } = useSettings();
 
   const visibleNavItems = navigation.filter(item =>
     !item.permission || hasPermission(item.permission)
@@ -40,8 +43,11 @@ export default function Sidenav() {
 
   return (
     <aside className="w-64 bg-gray-800 dark:bg-gray-900 text-white flex flex-col">
-      <div className="p-4 border-b border-gray-700">
-        <h2 className="text-2xl font-bold">RBAC App</h2>
+      <div className="p-4 border-b border-gray-700 flex items-center gap-3">
+        {settings?.appLogo && (
+          <Image src={settings.appLogo} alt="App Logo" width={32} height={32} />
+        )}
+        <h2 className="text-2xl font-bold">{settings?.appName || 'RBAC App'}</h2>
       </div>
       <nav className="flex-1 p-4 space-y-2">
         <Accordion type="multiple" className="w-full">
