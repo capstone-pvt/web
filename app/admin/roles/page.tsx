@@ -13,6 +13,7 @@ import {
 import { Button } from '@/app/components/ui/button';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { toast } from 'sonner';
+import { useHeader } from '@/lib/contexts/HeaderContext';
 
 // Type Definitions
 interface Permission {
@@ -127,11 +128,16 @@ const RoleAccordionItem = ({ role, groupedPermissions, editingPermissions, onPer
 
 // Main Page Component
 export default function RolesPage() {
+  const { setTitle } = useHeader();
   const [roles, setRoles] = useState<Role[]>([]);
   const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>();
   const [editingPermissions, setEditingPermissions] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    setTitle('Role Management');
+  }, [setTitle]);
 
   useEffect(() => {
     fetchData();
@@ -161,7 +167,8 @@ export default function RolesPage() {
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
-      setLoading(false);
+      setLoading(.
+      false);
     }
   };
 
@@ -237,17 +244,7 @@ export default function RolesPage() {
 
   return (
     <PermissionGate permission={PERMISSIONS.ROLES_READ}>
-      <div>
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Role Management
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            View and manage system roles and permissions
-          </p>
-        </div>
-        <div className="space-y-4">{renderContent()}</div>
-      </div>
+      <div className="space-y-4">{renderContent()}</div>
     </PermissionGate>
   );
 }

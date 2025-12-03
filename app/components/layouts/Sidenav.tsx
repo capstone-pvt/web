@@ -22,6 +22,7 @@ const navigation = [
     permission: PERMISSIONS.SETTINGS_VIEW,
     children: [
       { name: 'General', href: '/admin/settings', permission: PERMISSIONS.SETTINGS_MANAGE },
+      { name: 'System', href: '/admin/system', permission: PERMISSIONS.SYSTEM_MANAGE },
       { name: 'Users', href: '/admin/users', permission: PERMISSIONS.USERS_READ },
       { name: 'Roles', href: '/admin/roles', permission: PERMISSIONS.ROLES_READ },
       { name: 'Permissions', href: '/admin/permissions', permission: PERMISSIONS.PERMISSIONS_MANAGE },

@@ -1,11 +1,13 @@
 'use client';
 
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { useHeader } from '@/lib/contexts/HeaderContext';
 import { useState } from 'react';
 import { ThemeToggle } from '@/app/components/ui/theme-toggle';
 
 export default function Header() {
   const { user, logout } = useAuth();
+  const { title } = useHeader();
   const [showMenu, setShowMenu] = useState(false);
 
   const handleLogout = async () => {
@@ -18,7 +20,7 @@ export default function Header() {
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Dashboard
+              {title}
             </h1>
           </div>
           <div className="flex items-center gap-4">

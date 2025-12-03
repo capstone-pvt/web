@@ -11,7 +11,6 @@ import {
   CardHeader,
   Input,
   Badge,
-  PageHeader,
   DataTable,
   Dialog,
   DialogContent,
@@ -21,6 +20,7 @@ import {
 } from '@/app/components/ui';
 import { PlusIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
 import { toast } from 'sonner';
+import { useHeader } from '@/lib/contexts/HeaderContext';
 
 interface Permission extends Record<string, unknown> {
   _id: string;
@@ -44,6 +44,7 @@ interface PermissionFormData {
 }
 
 export default function PermissionsPage() {
+  const { setTitle } = useHeader();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -57,6 +58,10 @@ export default function PermissionsPage() {
     action: '',
     category: '',
   });
+
+  useEffect(() => {
+    setTitle('Permissions Management');
+  }, [setTitle]);
 
   useEffect(() => {
     fetchPermissions();
@@ -225,18 +230,14 @@ export default function PermissionsPage() {
   return (
     <PermissionGate permission={PERMISSIONS.PERMISSIONS_MANAGE}>
       <div className="space-y-6">
-        <PageHeader
-          title="Permissions Management"
-          description="Manage system permissions and access control"
-          action={
+        <div className="flex justify-end">
             <PermissionGate permission={PERMISSIONS.PERMISSIONS_MANAGE}>
               <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <PlusIcon className="mr-2 h-4 w-4" />
                 Create Permission
               </Button>
             </PermissionGate>
-          }
-        />
+        </div>
 
         <Card>
           <CardHeader>

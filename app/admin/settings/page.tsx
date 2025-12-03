@@ -5,10 +5,16 @@ import axios from '@/lib/api/axios';
 import { ISetting } from '@/lib/db/models/Setting';
 import PermissionGate from '@/app/components/guards/PermissionGate';
 import { PERMISSIONS } from '@/config/permissions';
+import { useHeader } from '@/lib/contexts/HeaderContext';
 
 const SettingsPage = () => {
+  const { setTitle } = useHeader();
   const [settings, setSettings] = useState<ISetting | null>(null);
   const [formData, setFormData] = useState<Partial<ISetting>>({});
+
+  useEffect(() => {
+    setTitle('Application Settings');
+  }, [setTitle]);
 
   const fetchSettings = async () => {
     const res = await axios.get('/api/settings');
@@ -52,7 +58,6 @@ const SettingsPage = () => {
   return (
     <PermissionGate permission={PERMISSIONS.SETTINGS_MANAGE}>
       <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Application Settings</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">

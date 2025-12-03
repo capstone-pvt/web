@@ -19,11 +19,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  PageHeader,
   DataTable
 } from '@/app/components/ui';
 import { PlusIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
 import { toast } from 'sonner';
+import { useHeader } from '@/lib/contexts/HeaderContext';
 
 interface User extends Record<string, unknown> {
   _id: string;
@@ -38,12 +38,17 @@ interface User extends Record<string, unknown> {
 }
 
 export default function UsersPage() {
+  const { setTitle } = useHeader();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    setTitle('User Management');
+  }, [setTitle]);
 
   useEffect(() => {
     fetchUsers();
@@ -121,6 +126,7 @@ export default function UsersPage() {
         </Badge>
       ),
     },
+    .
     {
       key: 'lastLoginAt',
       label: 'Last Login',
@@ -162,10 +168,7 @@ export default function UsersPage() {
   return (
     <PermissionGate permission={PERMISSIONS.USERS_READ}>
       <div className="space-y-6">
-        <PageHeader
-          title="User Management"
-          description="Manage user accounts and permissions"
-          action={
+        <div className="flex justify-end">
             <PermissionGate permission={PERMISSIONS.USERS_CREATE}>
               <Link href="/admin/users/create">
                 <Button>
@@ -174,8 +177,7 @@ export default function UsersPage() {
                 </Button>
               </Link>
             </PermissionGate>
-          }
-        />
+        </div>
 
         <Card>
           <CardHeader>
