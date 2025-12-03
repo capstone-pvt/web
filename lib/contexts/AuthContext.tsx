@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import { AuthContextType, AuthUser, LoginCredentials, RegisterData } from '@/types/auth.types';
 
@@ -13,23 +13,27 @@ export function AuthProvider({ children }: Readonly<{
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   const refreshUser = useCallback(async () => {
     setIsLoading(true);
     try {
       const { user: userData } = await authApi.me();
-      // Transform API User to AuthUser by adding fullName
       const authUser: AuthUser = {
         ...userData,
         fullName: `${userData.firstName} ${userData.lastName}`,
       };
       setUser(authUser);
-    } catch {
+    } catch (error) {
       setUser(null);
+      // Only redirect if not on a public page
+      if (pathname !== '/login' && pathname !== '/register') {
+        router.push('/login');
+      }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [router, pathname]);
 
   useEffect(() => {
     refreshUser();
@@ -39,8 +43,6 @@ export function AuthProvider({ children }: Readonly<{
     setIsLoading(true);
     try {
       await authApi.login(credentials);
-      // After successful login and cookies are set, refresh the user data
-      // This will update the AuthContext state with the latest user and permissions
       await refreshUser();
       router.push('/dashboard');
     } catch (err) {
@@ -53,7 +55,6 @@ export function AuthProvider({ children }: Readonly<{
   const register = async (data: RegisterData) => {
     try {
       await authApi.register(data);
-      // After registration, login automatically
       await login({ email: data.email, password: data.password });
     } catch (err) {
       const error = err as Error;
