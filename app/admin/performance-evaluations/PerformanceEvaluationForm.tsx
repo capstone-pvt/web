@@ -29,6 +29,7 @@ import { getPersonnel } from '@/lib/api/personnel.api';
 const formSchema = z.object({
   personnel: z.string().min(1, 'Personnel is required.'),
   evaluationDate: z.string().min(1, 'Evaluation date is required.'),
+  semester: z.string().min(1, 'Semester is required.'),
   PAA: z.coerce.number().min(1).max(5),
   KSM: z.coerce.number().min(1).max(5),
   TS: z.coerce.number().min(1).max(5),
@@ -62,6 +63,7 @@ export function PerformanceEvaluationForm({
       evaluationDate: defaultValues?.evaluationDate
         ? new Date(defaultValues.evaluationDate).toISOString().split('T')[0]
         : '',
+      semester: defaultValues?.semester || '',
       PAA: defaultValues?.scores?.PAA || 3,
       KSM: defaultValues?.scores?.KSM || 3,
       TS: defaultValues?.scores?.TS || 3,
@@ -77,6 +79,7 @@ export function PerformanceEvaluationForm({
     const dto: CreatePerformanceEvaluationDto = {
       personnel: values.personnel,
       evaluationDate: new Date(values.evaluationDate).toISOString(),
+      semester: values.semester,
       scores: {
         PAA: values.PAA,
         KSM: values.KSM,
@@ -120,17 +123,30 @@ export function PerformanceEvaluationForm({
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="evaluationDate"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Evaluation Date</FormLabel>
-              <FormControl><Input type="date" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="evaluationDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Evaluation Date</FormLabel>
+                <FormControl><Input type="date" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="semester"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Semester</FormLabel>
+                <FormControl><Input placeholder="e.g., 1st Sem 2024" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <div className="grid grid-cols-3 gap-4">
           {['PAA', 'KSM', 'TS', 'CM', 'AL', 'GO'].map((metric) => (
             <FormField

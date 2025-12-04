@@ -13,6 +13,7 @@ export interface PerformanceEvaluation {
   _id: string;
   personnel: Personnel;
   evaluationDate: string;
+  semester: string;
   scores: Scores;
   feedback?: string;
   evaluatedBy?: string;
@@ -23,6 +24,7 @@ export interface PerformanceEvaluation {
 export interface CreatePerformanceEvaluationDto {
   personnel: string;
   evaluationDate: string;
+  semester: string;
   scores: Scores;
   feedback?: string;
   evaluatedBy?: string;

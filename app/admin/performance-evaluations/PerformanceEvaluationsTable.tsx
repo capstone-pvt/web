@@ -34,13 +34,10 @@ export function PerformanceEvaluationsTable({
       <TableHeader>
         <TableRow>
           <TableHead>Personnel</TableHead>
-          <TableHead>Eval. Date</TableHead>
+          <TableHead>Semester</TableHead>
+          <TableHead>Date</TableHead>
           <TableHead>PAA</TableHead>
           <TableHead>KSM</TableHead>
-          <TableHead>TS</TableHead>
-          <TableHead>CM</TableHead>
-          <TableHead>AL</TableHead>
-          <TableHead>GO</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -48,13 +45,10 @@ export function PerformanceEvaluationsTable({
         {evaluations.map((evaluation) => (
           <TableRow key={evaluation._id}>
             <TableCell>{`${evaluation.personnel.firstName} ${evaluation.personnel.lastName}`}</TableCell>
+            <TableCell>{evaluation.semester}</TableCell>
             <TableCell>{new Date(evaluation.evaluationDate).toLocaleDateString()}</TableCell>
             <TableCell>{evaluation.scores?.PAA || 'N/A'}</TableCell>
             <TableCell>{evaluation.scores?.KSM || 'N/A'}</TableCell>
-            <TableCell>{evaluation.scores?.TS || 'N/A'}</TableCell>
-            <TableCell>{evaluation.scores?.CM || 'N/A'}</TableCell>
-            <TableCell>{evaluation.scores?.AL || 'N/A'}</TableCell>
-            <TableCell>{evaluation.scores?.GO || 'N/A'}</TableCell>
             <TableCell>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

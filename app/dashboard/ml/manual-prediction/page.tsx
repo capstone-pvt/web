@@ -11,6 +11,7 @@ import { Personnel } from '@/types/personnel';
 import { Combobox } from '@/app/components/ui/ComboBox';
 import { Button } from '@/app/components/ui/button';
 import { Award } from 'lucide-react';
+import { Input } from '@/app/components/ui/input';
 
 const PERFORMANCE_THRESHOLD = 3.5;
 
@@ -25,6 +26,7 @@ const trainingSuggestions: Record<string, string> = {
 
 export default function ManualPredictPerformancePage() {
   const [personnelId, setPersonnelId] = useState('');
+  const [semester, setSemester] = useState('');
   const [metrics, setMetrics] = useState({
     PAA: '', KSM: '', TS: '', CM: '', AL: '', GO: '',
   });
@@ -60,7 +62,7 @@ export default function ManualPredictPerformancePage() {
     setFailedMetrics([]);
 
     try {
-      const payload = { metrics: numericMetrics, personnelId: personnelId || undefined };
+      const payload = { metrics: numericMetrics, personnelId: personnelId || undefined, semester };
       const response = await axios.post('/ml/predict-manual', payload);
       
       const data = response.data;
@@ -101,17 +103,29 @@ export default function ManualPredictPerformancePage() {
             Predict Personnel Performance (Manual)
           </h1>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Select Personnel (Optional)
-            </label>
-            <Combobox
-              options={personnelOptions}
-              value={personnelId}
-              onChange={setPersonnelId}
-              placeholder="Select a person..."
-              emptyText={isLoadingPersonnel ? 'Loading...' : 'No personnel found.'}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Select Personnel (Optional)
+              </label>
+              <Combobox
+                options={personnelOptions}
+                value={personnelId}
+                onChange={setPersonnelId}
+                placeholder="Select a person..."
+                emptyText={isLoadingPersonnel ? 'Loading...' : 'No personnel found.'}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Semester
+              </label>
+              <Input 
+                placeholder="e.g., 1st Sem 2024" 
+                value={semester}
+                onChange={(e) => setSemester(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
