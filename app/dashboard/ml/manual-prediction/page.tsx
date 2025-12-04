@@ -134,7 +134,7 @@ export default function ManualPredictPerformancePage() {
                 <label htmlFor={key} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   {key}
                 </label>
-                <input
+                <Input
                   type="number"
                   id={key}
                   name={key}
@@ -143,7 +143,6 @@ export default function ManualPredictPerformancePage() {
                   step="0.1"
                   min="0"
                   max="5"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
             ))}
