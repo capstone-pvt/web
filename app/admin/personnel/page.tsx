@@ -17,7 +17,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/app/components/ui/dialog';
+} from '@/app/components/ui/dialog'; // Removed DialogTrigger
 import { PersonnelForm } from './PersonnelForm';
 import { PersonnelTable } from './PersonnelTable';
 import { toast } from 'sonner';
