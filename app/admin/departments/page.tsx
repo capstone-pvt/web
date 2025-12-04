@@ -7,7 +7,7 @@ import {
   updateDepartment,
   deleteDepartment,
 } from '@/lib/api/departments.api';
-import { Department } from '@/types/department';
+import { Department, UpdateDepartmentDto } from '@/types/department';
 
 export default function DepartmentsPage() {
   const queryClient = useQueryClient();
@@ -25,7 +25,7 @@ export default function DepartmentsPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (variables: { id: string; data: any }) =>
+    mutationFn: (variables: { id: string; data: UpdateDepartmentDto }) =>
       updateDepartment(variables.id, variables.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
@@ -46,7 +46,12 @@ export default function DepartmentsPage() {
   return (
     <div>
       <h1>Departments</h1>
-      {/* Add your UI for creating, listing, updating, and deleting departments here */}
+      <ul>
+        {departments?.map((department) => (
+          <li key={department._id}>{department.name}</li>
+        ))}
+      </ul>
+      {/* Add your UI for creating, updating, and deleting departments here */}
     </div>
   );
 }

@@ -53,7 +53,14 @@ export default function PersonnelPage() {
   return (
     <div>
       <h1>Personnel</h1>
-      {/* Add your UI for creating, listing, updating, and deleting personnel here */}
+      <ul>
+        {personnel?.map((p) => (
+          <li key={p._id}>
+            {p.firstName} {p.lastName} - {p.department?.name}
+          </li>
+        ))}
+      </ul>
+      {/* Add your UI for creating, updating, and deleting personnel here */}
     </div>
   );
 }
