@@ -39,8 +39,8 @@ app/
 │   ├── guards/               # Permission & route guards
 │   ├── layouts/              # Layout components (Header, Sidenav, Footer)
 │   └── ui/                   # Reusable UI components
-│       ├── Button.tsx
-│       ├── Card.tsx
+│       ├── button.tsx
+│       ├── card.tsx
 │       ├── EmptyState.tsx
 │       ├── ErrorDisplay.tsx
 │       ├── LoadingSkeleton.tsx

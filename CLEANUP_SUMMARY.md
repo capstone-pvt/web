@@ -21,8 +21,8 @@ Created reusable, type-safe UI components:
 
 | Component | Purpose | Location |
 |-----------|---------|----------|
-| **Button** | Standardized buttons with variants | `app/components/ui/Button.tsx` |
-| **Card** | Content wrapper with consistent styling | `app/components/ui/Card.tsx` |
+| **Button** | Standardized buttons with variants | `app/components/ui/button.tsx` |
+| **Card** | Content wrapper with consistent styling | `app/components/ui/card.tsx` |
 | **PageHeader** | Page titles with optional actions | `app/components/ui/PageHeader.tsx` |
 | **LoadingSkeleton** | Loading states and skeletons | `app/components/ui/LoadingSkeleton.tsx` |
 | **EmptyState** | No-data states with actions | `app/components/ui/EmptyState.tsx` |
