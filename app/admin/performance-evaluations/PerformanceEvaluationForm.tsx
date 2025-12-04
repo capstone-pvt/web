@@ -29,7 +29,12 @@ import { getPersonnel } from '@/lib/api/personnel.api';
 const formSchema = z.object({
   personnel: z.string().min(1, 'Personnel is required.'),
   evaluationDate: z.string().min(1, 'Evaluation date is required.'),
-  overallScore: z.coerce.number().min(1).max(5, 'Score must be between 1 and 5.'), // Simplified for now
+  PAA: z.coerce.number().min(1).max(5),
+  KSM: z.coerce.number().min(1).max(5),
+  TS: z.coerce.number().min(1).max(5),
+  CM: z.coerce.number().min(1).max(5),
+  AL: z.coerce.number().min(1).max(5),
+  GO: z.coerce.number().min(1).max(5),
   feedback: z.string().optional(),
   evaluatedBy: z.string().optional(),
 });
@@ -57,7 +62,12 @@ export function PerformanceEvaluationForm({
       evaluationDate: defaultValues?.evaluationDate
         ? new Date(defaultValues.evaluationDate).toISOString().split('T')[0]
         : '',
-      overallScore: defaultValues?.scores?.overallScore || 3, // Default to 3 if not set
+      PAA: defaultValues?.scores?.PAA || 3,
+      KSM: defaultValues?.scores?.KSM || 3,
+      TS: defaultValues?.scores?.TS || 3,
+      CM: defaultValues?.scores?.CM || 3,
+      AL: defaultValues?.scores?.AL || 3,
+      GO: defaultValues?.scores?.GO || 3,
       feedback: defaultValues?.feedback || '',
       evaluatedBy: defaultValues?.evaluatedBy || '',
     },
@@ -67,7 +77,14 @@ export function PerformanceEvaluationForm({
     const dto: CreatePerformanceEvaluationDto = {
       personnel: values.personnel,
       evaluationDate: new Date(values.evaluationDate).toISOString(),
-      scores: { overallScore: values.overallScore }, // Map to scores object
+      scores: {
+        PAA: values.PAA,
+        KSM: values.KSM,
+        TS: values.TS,
+        CM: values.CM,
+        AL: values.AL,
+        GO: values.GO,
+      },
       feedback: values.feedback,
       evaluatedBy: values.evaluatedBy,
     };
@@ -80,7 +97,7 @@ export function PerformanceEvaluationForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmitInternal)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(handleSubmitInternal)} className="space-y-6">
         <FormField
           control={form.control}
           name="personnel"
@@ -89,9 +106,7 @@ export function PerformanceEvaluationForm({
               <FormLabel>Personnel</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select personnel" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select personnel" /></SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {personnelList?.map((person) => (
@@ -111,35 +126,34 @@ export function PerformanceEvaluationForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Evaluation Date</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
+              <FormControl><Input type="date" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="overallScore"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Overall Score (1-5)</FormLabel>
-              <FormControl>
-                <Input type="number" step="0.1" min="1" max="5" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-3 gap-4">
+          {['PAA', 'KSM', 'TS', 'CM', 'AL', 'GO'].map((metric) => (
+            <FormField
+              key={metric}
+              control={form.control}
+              name={metric as 'PAA' | 'KSM' | 'TS' | 'CM' | 'AL' | 'GO'}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{metric}</FormLabel>
+                  <FormControl><Input type="number" step="0.01" min="1" max="5" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ))}
+        </div>
         <FormField
           control={form.control}
           name="feedback"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Feedback</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Optional feedback" {...field} />
-              </FormControl>
+              <FormControl><Textarea placeholder="Optional feedback" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -150,9 +164,7 @@ export function PerformanceEvaluationForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Evaluated By</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., Manager Name" {...field} />
-              </FormControl>
+              <FormControl><Input placeholder="e.g., Manager Name" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )}

@@ -1,10 +1,19 @@
 import { Personnel } from './personnel';
 
+export interface Scores {
+  PAA: number;
+  KSM: number;
+  TS: number;
+  CM: number;
+  AL: number;
+  GO: number;
+}
+
 export interface PerformanceEvaluation {
   _id: string;
   personnel: Personnel;
   evaluationDate: string;
-  scores: Record<string, number>;
+  scores: Scores;
   feedback?: string;
   evaluatedBy?: string;
   createdAt: string;
@@ -14,7 +23,7 @@ export interface PerformanceEvaluation {
 export interface CreatePerformanceEvaluationDto {
   personnel: string;
   evaluationDate: string;
-  scores: Record<string, number>;
+  scores: Scores;
   feedback?: string;
   evaluatedBy?: string;
 }

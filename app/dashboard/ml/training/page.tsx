@@ -53,7 +53,10 @@ export default function TrainingPage() {
           <CardTitle>Upload Training Data</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p>Upload an Excel file (.xlsx, .xls, .csv) with personnel data. The file should contain a 'performance_score' column.</p>
+          <p>
+            Upload an Excel file (.xlsx, .xls, .csv) with personnel data. The file must contain the following columns: 
+            <strong>PAA, KSM, TS, CM, AL, GO, GEN AVG</strong>.
+          </p>
           <div className="flex items-center space-x-2">
             <Input type="file" accept=".xlsx, .xls, .csv" onChange={handleFileChange} />
           </div>

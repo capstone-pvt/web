@@ -35,8 +35,8 @@ export function PerformanceEvaluationsTable({
         <TableRow>
           <TableHead>Personnel</TableHead>
           <TableHead>Date</TableHead>
-          <TableHead>Overall Score</TableHead>
-          <TableHead>Evaluated By</TableHead>
+          <TableHead>PAA</TableHead>
+          <TableHead>KSM</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -45,8 +45,8 @@ export function PerformanceEvaluationsTable({
           <TableRow key={evaluation._id}>
             <TableCell>{`${evaluation.personnel.firstName} ${evaluation.personnel.lastName}`}</TableCell>
             <TableCell>{new Date(evaluation.evaluationDate).toLocaleDateString()}</TableCell>
-            <TableCell>{evaluation.scores?.overallScore || 'N/A'}</TableCell>
-            <TableCell>{evaluation.evaluatedBy || 'N/A'}</TableCell>
+            <TableCell>{evaluation.scores?.PAA || 'N/A'}</TableCell>
+            <TableCell>{evaluation.scores?.KSM || 'N/A'}</TableCell>
             <TableCell>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
