@@ -19,11 +19,14 @@ import {
 import { toast } from 'sonner';
 import { PerformanceEvaluationForm } from './PerformanceEvaluationForm';
 import { PerformanceEvaluationsTable } from './PerformanceEvaluationsTable';
+import { BulkUploadDialog } from './BulkUploadDialog';
+import { Upload, Plus } from 'lucide-react';
 
 export default function PerformanceEvaluationsPage() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedEvaluation, setSelectedEvaluation] = useState<PerformanceEvaluation | null>(null);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [selectedEvaluation, setSelectedEvaluation] = useState<PerformanceEvaluation | undefined>(undefined);
 
   const { data: evaluations = [], isLoading } = useQuery<PerformanceEvaluation[]>({
     queryKey: ['performance-evaluations'],
@@ -49,7 +52,7 @@ export default function PerformanceEvaluationsPage() {
       queryClient.invalidateQueries({ queryKey: ['performance-evaluations'] });
       toast.success('Performance evaluation updated successfully.');
       setIsDialogOpen(false);
-      setSelectedEvaluation(null);
+      setSelectedEvaluation(undefined);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to update performance evaluation.');
@@ -68,7 +71,7 @@ export default function PerformanceEvaluationsPage() {
   });
 
   const handleCreate = () => {
-    setSelectedEvaluation(null);
+    setSelectedEvaluation(undefined);
     setIsDialogOpen(true);
   };
 
@@ -97,9 +100,23 @@ export default function PerformanceEvaluationsPage() {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Performance Evaluations</h1>
-        <Button onClick={handleCreate}>Add Evaluation</Button>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Performance Evaluations</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage employee performance evaluations and bulk import data
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsBulkUploadOpen(true)} className="gap-2">
+            <Upload className="h-4 w-4" />
+            Bulk Upload
+          </Button>
+          <Button onClick={handleCreate} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Evaluation
+          </Button>
+        </div>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -114,6 +131,8 @@ export default function PerformanceEvaluationsPage() {
           />
         </DialogContent>
       </Dialog>
+
+      <BulkUploadDialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen} />
 
       <PerformanceEvaluationsTable
         evaluations={evaluations}
