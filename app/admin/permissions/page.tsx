@@ -22,6 +22,7 @@ import { PlusIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
 import { toast } from 'sonner';
 import { useHeader } from '@/lib/contexts/HeaderContext';
 import { useSystemAdmin } from '@/lib/hooks/useSystemAdmin';
+import { useAdminOrSystemAdmin } from '@/lib/hooks/useAdminOrSystemAdmin';
 import { useAlert } from '@/lib/contexts/AlertContext';
 
 interface Permission extends Record<string, unknown> {
@@ -48,6 +49,7 @@ interface PermissionFormData {
 export default function PermissionsPage() {
   const { setTitle } = useHeader();
   const isSystemAdmin = useSystemAdmin();
+  const isAdminOrSystemAdmin = useAdminOrSystemAdmin();
   const alert = useAlert();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,11 +87,10 @@ export default function PermissionsPage() {
       setLoading(false);
     }
   };
-
   const handleCreate = async () => {
-    if (!isSystemAdmin) {
+    if (!isAdminOrSystemAdmin) {
       alert.showError(
-        'Only System Administrators can create permissions. Please contact your administrator if you need this permission.',
+        'Only System Administrators and Administrators can create permissions. Please contact your administrator if you need this permission.',
         { title: 'Permission Denied' },
       );
       return;
@@ -273,7 +274,7 @@ export default function PermissionsPage() {
       <div className="space-y-6">
         <div className="flex justify-end">
             <PermissionGate permission={PERMISSIONS.PERMISSIONS_MANAGE}>
-              <Button onClick={() => setIsCreateDialogOpen(true)} disabled={!isSystemAdmin}>
+              <Button onClick={() => setIsCreateDialogOpen(true)} disabled={!isAdminOrSystemAdmin}>
                 <PlusIcon className="mr-2 h-4 w-4" />
                 Create Permission
               </Button>
@@ -301,7 +302,7 @@ export default function PermissionsPage() {
             <DialogHeader>
               <DialogTitle>Create New Permission</DialogTitle>
               <DialogDescription>
-                Add a new permission to the system. Only System Administrators can create new permissions.
+                Add a new permission to the system. Only System Administrators and Administrators can create new permissions.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">

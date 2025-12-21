@@ -24,6 +24,7 @@ import { PlusIcon } from '@radix-ui/react-icons';
 import { toast } from 'sonner';
 import { useHeader } from '@/lib/contexts/HeaderContext';
 import { useSystemAdmin } from '@/lib/hooks/useSystemAdmin';
+import { useAdminOrSystemAdmin } from '@/lib/hooks/useAdminOrSystemAdmin';
 
 // Type Definitions
 interface Permission {
@@ -368,14 +369,98 @@ export default function RolesPage() {
           </PermissionGate>
         </div>
         {renderContent()}
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) resetCreateForm();
+        }}>
           <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Role</DialogTitle>
               <DialogDescription>Create a new role with specific permissions.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              {/* Form fields */}
+              <div className="grid gap-2">
+                <label htmlFor="name" className="text-sm font-medium">
+                  Name (Internal) *
+                </label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={createFormData.name}
+                  onChange={handleCreateFormChange}
+                  placeholder="e.g., content_manager"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="displayName" className="text-sm font-medium">
+                  Display Name *
+                </label>
+                <Input
+                  id="displayName"
+                  name="displayName"
+                  value={createFormData.displayName}
+                  onChange={handleCreateFormChange}
+                  placeholder="e.g., Content Manager"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="description" className="text-sm font-medium">
+                  Description
+                </label>
+                <Input
+                  id="description"
+                  name="description"
+                  value={createFormData.description}
+                  onChange={handleCreateFormChange}
+                  placeholder="Role description"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="hierarchy" className="text-sm font-medium">
+                  Hierarchy Level *
+                </label>
+                <Input
+                  id="hierarchy"
+                  name="hierarchy"
+                  type="number"
+                  min="1"
+                  value={createFormData.hierarchy}
+                  onChange={handleCreateFormChange}
+                  placeholder="1"
+                />
+                <p className="text-xs text-gray-500">
+                  Higher hierarchy can manage lower hierarchy roles
+                </p>
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Permissions</label>
+                <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto">
+                  {Object.entries(groupedAllPermissions).map(([category, perms]) => (
+                    <div key={category} className="mb-4 last:mb-0">
+                      <h5 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                        {category}
+                      </h5>
+                      <div className="grid grid-cols-1 gap-2">
+                        {perms.map((perm) => (
+                          <div key={perm._id} className="flex items-center gap-2">
+                            <Checkbox
+                              id={`create-perm-${perm._id}`}
+                              checked={createFormData.permissions.includes(perm._id)}
+                              onCheckedChange={() => handleCreatePermissionToggle(perm._id)}
+                            />
+                            <label
+                              htmlFor={`create-perm-${perm._id}`}
+                              className="text-sm font-medium text-gray-800 dark:text-gray-200 cursor-pointer"
+                            >
+                              {perm.displayName}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>

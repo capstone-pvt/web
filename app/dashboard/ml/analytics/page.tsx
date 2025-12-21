@@ -15,6 +15,7 @@ import {
   LineChart,
   Line,
 } from 'recharts';
+import { AccuracyTrendChart } from '@/app/components/ml/AccuracyTrendChart';
 
 interface AnalyticsData {
   overallAverages: {
@@ -38,10 +39,20 @@ const fetchAnalyticsData = async (): Promise<AnalyticsData> => {
   return data;
 };
 
+const fetchAccuracyTrends = async (): Promise<Array<{ date: string; accuracy: number; count?: number }>> => {
+  const { data } = await axios.get('/ml/accuracy-trends');
+  return data;
+};
+
 export default function AnalyticsPage() {
   const { data, isLoading, error } = useQuery<AnalyticsData>({
     queryKey: ['mlAnalytics'],
     queryFn: fetchAnalyticsData,
+  });
+
+  const { data: accuracyData, isLoading: isLoadingAccuracy } = useQuery({
+    queryKey: ['accuracyTrends'],
+    queryFn: fetchAccuracyTrends,
   });
 
   if (isLoading) return <div>Loading analytics...</div>;
@@ -51,7 +62,7 @@ export default function AnalyticsPage() {
 
   const averagesData = overallAverages ? Object.entries(overallAverages)
     .filter(([key]) => key !== '_id' && key !== 'totalEvaluations')
-    .map(([name, value]) => ({ name, value: Number(value.toFixed(2)) })) : [];
+    .map(([name, value]) => ({ name, value: Number(value!.toFixed(2)) })) : [];
 
   const trendData = semesterTrends?.map(trend => ({
     semester: trend._id,
@@ -73,6 +84,11 @@ export default function AnalyticsPage() {
         </Card>
         {/* Add more stat cards if needed */}
       </div>
+
+      {/* Model Accuracy Trend Chart */}
+      {!isLoadingAccuracy && accuracyData && accuracyData.length > 0 && (
+        <AccuracyTrendChart data={accuracyData} />
+      )}
 
       <Card>
         <CardHeader>
