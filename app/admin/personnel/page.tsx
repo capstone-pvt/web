@@ -20,11 +20,14 @@ import {
 } from '@/app/components/ui/dialog'; // Removed DialogTrigger
 import { PersonnelForm } from './PersonnelForm';
 import { PersonnelTable } from './PersonnelTable';
+import { BulkUploadDialog } from './BulkUploadDialog';
 import { toast } from 'sonner';
+import { Upload } from 'lucide-react';
 
 export default function PersonnelPage() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [selectedPersonnel, setSelectedPersonnel] = useState<Personnel | null>(null);
 
   const { data: personnel = [], isLoading: isLoadingPersonnel } = useQuery<Personnel[]>({
@@ -106,8 +109,19 @@ export default function PersonnelPage() {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Personnel</h1>
-        <Button onClick={handleCreate}>Add Personnel</Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsBulkUploadOpen(true)} variant="outline">
+            <Upload className="mr-2 h-4 w-4" />
+            Bulk Upload
+          </Button>
+          <Button onClick={handleCreate}>Add Personnel</Button>
+        </div>
       </div>
+
+      <BulkUploadDialog
+        open={isBulkUploadOpen}
+        onOpenChange={setIsBulkUploadOpen}
+      />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
