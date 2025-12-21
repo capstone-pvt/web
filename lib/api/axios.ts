@@ -43,6 +43,23 @@ axiosInstance.interceptors.response.use(
   },
   async (error: AxiosError<ApiResponse>) => {
     const originalRequest = error.config as ExtendedAxiosRequestConfig;
+    const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
+
+    // Check for session invalidation (logged in from another device)
+    if (
+      error.response?.status === 401 &&
+      errorMessage.includes('logged in from another device')
+    ) {
+      // Session was invalidated by another login
+      // Redirect to login page with reason
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login?reason=device';
+      }
+      return Promise.reject({
+        ...error,
+        message: errorMessage,
+      });
+    }
 
     // Only try to refresh on 401 errors for non-auth-related endpoints
     if (
@@ -67,7 +84,6 @@ axiosInstance.interceptors.response.use(
     }
 
     // Format error response
-    const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
     return Promise.reject({
       ...error,
       message: errorMessage,

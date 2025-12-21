@@ -12,10 +12,12 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Show notification if logged out due to inactivity
+    // Show notification based on logout reason
     const reason = searchParams.get('reason');
     if (reason === 'idle') {
       toast.warning('You have been logged out due to inactivity. Please log in again.');
+    } else if (reason === 'device') {
+      toast.error('Your account has been logged in from another device. Please log in again.');
     }
   }, [searchParams]);
 
