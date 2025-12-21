@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import axios from '@/lib/api/axios';
@@ -10,9 +10,10 @@ import { getPersonnel } from '@/lib/api/personnel.api';
 import { Personnel } from '@/types/personnel';
 import { Combobox } from '@/app/components/ui/ComboBox';
 import { Button } from '@/app/components/ui/button';
-import { Award } from 'lucide-react';
+import { Award, AlertCircle } from 'lucide-react';
 import { Input } from '@/app/components/ui/input';
 import { useAlert } from '@/lib/contexts/AlertContext';
+import { mlApi } from '@/lib/api/ml.api';
 
 const PERFORMANCE_THRESHOLD = 3.5;
 
@@ -35,6 +36,8 @@ export default function ManualPredictPerformancePage() {
   const [prediction, setPrediction] = useState<number | null>(null);
   const [failedMetrics, setFailedMetrics] = useState<string[]>([]);
   const [isPredicting, setIsPredicting] = useState(false);
+  const [existingPrediction, setExistingPrediction] = useState<any>(null);
+  const [isCheckingExisting, setIsCheckingExisting] = useState(false);
   const router = useRouter();
 
   const { data: personnelList = [], isLoading: isLoadingPersonnel } = useQuery<Personnel[]>({
@@ -43,6 +46,32 @@ export default function ManualPredictPerformancePage() {
   });
 
   const isInterventionNeeded = failedMetrics.length > 0;
+
+  // Check for existing prediction when personnel or semester changes
+  useEffect(() => {
+    const checkExisting = async () => {
+      if (personnelId && semester && semester.trim()) {
+        setIsCheckingExisting(true);
+        try {
+          const result = await mlApi.checkExistingPrediction(personnelId, semester);
+          if (result.exists) {
+            setExistingPrediction(result.evaluation);
+          } else {
+            setExistingPrediction(null);
+          }
+        } catch (error) {
+          console.error('Error checking existing prediction:', error);
+          setExistingPrediction(null);
+        } finally {
+          setIsCheckingExisting(false);
+        }
+      } else {
+        setExistingPrediction(null);
+      }
+    };
+
+    checkExisting();
+  }, [personnelId, semester]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -153,6 +182,22 @@ export default function ManualPredictPerformancePage() {
             </div>
           </div>
 
+          {/* Warning for existing prediction */}
+          {existingPrediction && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 mb-1">
+                  Prediction Already Exists
+                </h3>
+                <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                  This personnel already has a prediction for {existingPrediction.semester}.
+                  You cannot create duplicate predictions for the same semester.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             {Object.keys(metrics).map((key) => (
               <div key={key}>
@@ -181,10 +226,11 @@ export default function ManualPredictPerformancePage() {
             </button>
             <button
               onClick={handlePredict}
-              disabled={isPredicting}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full transition disabled:opacity-50"
+              disabled={isPredicting || !!existingPrediction || isCheckingExisting}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+              title={existingPrediction ? 'Prediction already exists for this semester' : ''}
             >
-              {isPredicting ? 'Predicting...' : 'Get Prediction'}
+              {isPredicting ? 'Predicting...' : isCheckingExisting ? 'Checking...' : existingPrediction ? 'Already Predicted' : 'Get Prediction'}
             </button>
           </div>
         </div>

@@ -197,4 +197,17 @@ export const mlApi = {
     );
     return response.data as unknown as Personnel;
   },
+
+  /**
+   * Check if a prediction already exists for a personnel and semester
+   */
+  checkExistingPrediction: async (
+    personnelId: string,
+    semester: string,
+  ): Promise<{ exists: boolean; evaluation?: any }> => {
+    const response = await axiosInstance.get('/ml/check-prediction', {
+      params: { personnelId, semester },
+    });
+    return response.data;
+  },
 };
