@@ -136,14 +136,21 @@ const SettingsPage = () => {
             <CardHeader><CardTitle>Security Settings</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label htmlFor="sessionTimeout" className="block text-sm font-medium mb-1">Session Timeout (seconds)</label>
+                <label htmlFor="sessionTimeout" className="block text-sm font-medium mb-1">
+                  Idle Timeout (minutes)
+                </label>
                 <Input
                   type="number"
                   name="sessionTimeout"
                   id="sessionTimeout"
                   value={formData.sessionTimeout || ''}
                   onChange={handleChange}
+                  min="1"
+                  placeholder="5"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Users will be logged out after this many minutes of inactivity
+                </p>
               </div>
               <div>
                 <label htmlFor="maxLoginAttempts" className="block text-sm font-medium mb-1">Max Login Attempts</label>

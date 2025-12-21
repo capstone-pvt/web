@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import axios from '@/lib/api/axios';
-import { AxiosError } from 'axios';
+import { AxiosError, isAxiosError } from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { getPersonnel } from '@/lib/api/personnel.api';
 import { Personnel } from '@/types/personnel';
@@ -48,6 +48,17 @@ export default function ManualPredictPerformancePage() {
   };
 
   const handlePredict = async () => {
+    // Validate required fields
+    if (!personnelId || !personnelId.trim()) {
+      toast.error('Please select a personnel.');
+      return;
+    }
+
+    if (!semester || !semester.trim()) {
+      toast.error('Please enter a semester.');
+      return;
+    }
+
     const numericMetrics = Object.fromEntries(
       Object.entries(metrics).map(([key, value]) => [key, Number.parseFloat(value)])
     );
@@ -62,7 +73,7 @@ export default function ManualPredictPerformancePage() {
     setFailedMetrics([]);
 
     try {
-      const payload = { metrics: numericMetrics, personnelId: personnelId || undefined, semester };
+      const payload = { metrics: numericMetrics, personnelId, semester };
       const response = await axios.post('/ml/predict-manual', payload);
       
       const data = response.data;
@@ -78,7 +89,7 @@ export default function ManualPredictPerformancePage() {
       }
     } catch (error: unknown) {
       console.error('Prediction error:', error);
-      if (axios.isAxiosError(error)) {
+      if (isAxiosError(error)) {
         const axiosError = error as AxiosError<{ message: string }>;
         toast.error(axiosError.response?.data?.message || 'Error getting prediction.');
       } else {
@@ -106,7 +117,7 @@ export default function ManualPredictPerformancePage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Select Personnel (Optional)
+                Select Personnel <span className="text-red-500">*</span>
               </label>
               <Combobox
                 options={personnelOptions}
@@ -118,12 +129,13 @@ export default function ManualPredictPerformancePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Semester
+                Semester <span className="text-red-500">*</span>
               </label>
-              <Input 
-                placeholder="e.g., 1st Sem 2024" 
+              <Input
+                placeholder="e.g., 1st Sem 2024"
                 value={semester}
                 onChange={(e) => setSemester(e.target.value)}
+                required
               />
             </div>
           </div>

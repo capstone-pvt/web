@@ -3,7 +3,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { authApi } from '@/lib/api';
+import { settingsApi } from '@/lib/api/settings.api';
 import { AuthContextType, AuthUser, LoginCredentials, RegisterData } from '@/types/auth.types';
+import { useIdleTimeout } from '@/lib/hooks/useIdleTimeout';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -12,6 +14,7 @@ export function AuthProvider({ children }: Readonly<{
 }>) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionTimeout, setSessionTimeout] = useState<number>(5); // Default 5 minutes
   const router = useRouter();
   const pathname = usePathname();
 
@@ -39,6 +42,55 @@ export function AuthProvider({ children }: Readonly<{
     refreshUser();
   }, [refreshUser]);
 
+  // Fetch session timeout from settings
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { settings } = await settingsApi.get();
+        if (settings?.sessionTimeout) {
+          setSessionTimeout(settings.sessionTimeout);
+        }
+      } catch (error) {
+        console.error('Failed to fetch settings:', error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
+  const logout = useCallback(async (isAutoLogout = false) => {
+    try {
+      await authApi.logout();
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      setUser(null);
+      if (isAutoLogout) {
+        router.push('/login?reason=idle');
+      } else {
+        router.push('/login');
+      }
+    }
+  }, [router]);
+
+  // Handle idle timeout
+  const handleIdle = useCallback(() => {
+    if (user) {
+      console.log('User has been idle for too long. Logging out...');
+      logout(true);
+    }
+  }, [user, logout]);
+
+  // Enable idle timeout only when user is authenticated and not on public pages
+  const isPublicPage = pathname === '/login' || pathname === '/register';
+  const shouldEnableIdleTimeout = !!user && !isPublicPage;
+
+  useIdleTimeout({
+    onIdle: handleIdle,
+    idleTime: sessionTimeout * 60 * 1000, // Convert minutes to milliseconds
+    enabled: shouldEnableIdleTimeout,
+  });
+
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
@@ -59,17 +111,6 @@ export function AuthProvider({ children }: Readonly<{
     } catch (err) {
       const error = err as Error;
       throw new Error(error.message || 'Registration failed');
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await authApi.logout();
-    } catch (err) {
-      console.error('Logout error:', err);
-    } finally {
-      setUser(null);
-      router.push('/login');
     }
   };
 
