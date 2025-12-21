@@ -13,6 +13,15 @@ interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
+// Global session alert handler - will be set by SessionAlertContext
+let globalSessionAlertHandler: ((type: 'device' | 'expired') => void) | null = null;
+
+export const setGlobalSessionAlertHandler = (
+  handler: (type: 'device' | 'expired') => void,
+) => {
+  globalSessionAlertHandler = handler;
+};
+
 const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 const axiosInstance = axios.create({
@@ -51,8 +60,10 @@ axiosInstance.interceptors.response.use(
       errorMessage.includes('logged in from another device')
     ) {
       // Session was invalidated by another login
-      // Redirect to login page with reason
-      if (typeof window !== 'undefined') {
+      if (globalSessionAlertHandler) {
+        globalSessionAlertHandler('device');
+      } else if (typeof window !== 'undefined') {
+        // Fallback to redirect if handler not set
         window.location.href = '/login?reason=device';
       }
       return Promise.reject({

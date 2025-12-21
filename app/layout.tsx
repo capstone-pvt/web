@@ -4,6 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/contexts/AuthContext";
 import { HeaderProvider } from "@/lib/contexts/HeaderContext";
 import { SettingsProvider } from "@/lib/contexts/SettingsContext";
+import { SessionAlertProvider } from "@/lib/contexts/SessionAlertContext";
+import { AlertProvider } from "@/lib/contexts/AlertContext";
 import { ThemeProvider } from "@/app/components/providers/theme-provider";
 import { ReactQueryProvider } from "@/app/components/providers/react-query-provider";
 import { Toaster } from "@/app/components/ui";
@@ -40,13 +42,17 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ReactQueryProvider>
-            <AuthProvider>
-              <SettingsProvider>
-                <HeaderProvider>
-                  {children}
-                </HeaderProvider>
-              </SettingsProvider>
-            </AuthProvider>
+            <AlertProvider>
+              <SessionAlertProvider>
+                <AuthProvider>
+                  <SettingsProvider>
+                    <HeaderProvider>
+                      {children}
+                    </HeaderProvider>
+                  </SettingsProvider>
+                </AuthProvider>
+              </SessionAlertProvider>
+            </AlertProvider>
             <Toaster />
           </ReactQueryProvider>
         </ThemeProvider>

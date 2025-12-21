@@ -22,6 +22,7 @@ import { PlusIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
 import { toast } from 'sonner';
 import { useHeader } from '@/lib/contexts/HeaderContext';
 import { useSystemAdmin } from '@/lib/hooks/useSystemAdmin';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 interface Permission extends Record<string, unknown> {
   _id: string;
@@ -47,6 +48,7 @@ interface PermissionFormData {
 export default function PermissionsPage() {
   const { setTitle } = useHeader();
   const isSystemAdmin = useSystemAdmin();
+  const alert = useAlert();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -76,7 +78,9 @@ export default function PermissionsPage() {
       setPermissions(response.data.permissions);
     } catch (error) {
       console.error('Error fetching permissions:', error);
-      toast.error('Failed to fetch permissions');
+      alert.showError('Failed to load permissions. Please try again or contact support.', {
+        title: 'Load Error',
+      });
     } finally {
       setLoading(false);
     }
@@ -84,7 +88,10 @@ export default function PermissionsPage() {
 
   const handleCreate = async () => {
     if (!isSystemAdmin) {
-      toast.error('Only System Administrators can create permissions.');
+      alert.showError(
+        'Only System Administrators can create permissions. Please contact your administrator if you need this permission.',
+        { title: 'Permission Denied' },
+      );
       return;
     }
     try {
@@ -95,14 +102,20 @@ export default function PermissionsPage() {
       fetchPermissions();
     } catch (error) {
       const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosError.response?.data?.error?.message || 'Failed to create permission');
+      alert.showError(
+        axiosError.response?.data?.error?.message || 'Failed to create permission. Please try again.',
+        { title: 'Creation Failed' },
+      );
     }
   };
 
   const handleUpdate = async () => {
     if (!editingPermission) return;
     if (editingPermission.isSystemPermission && !isSystemAdmin) {
-      toast.error('Only System Administrators can update system permissions.');
+      alert.showError(
+        'Only System Administrators can update system permissions. Please contact your administrator.',
+        { title: 'Permission Denied' },
+      );
       return;
     }
 
@@ -115,27 +128,41 @@ export default function PermissionsPage() {
       fetchPermissions();
     } catch (error) {
       const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosError.response?.data?.error?.message || 'Failed to update permission');
+      alert.showError(
+        axiosError.response?.data?.error?.message || 'Failed to update permission. Please try again.',
+        { title: 'Update Failed' },
+      );
     }
   };
 
   const handleDelete = async (permissionId: string) => {
     const permission = permissions.find(p => p._id === permissionId);
     if (permission?.isSystemPermission && !isSystemAdmin) {
-      toast.error('Only System Administrators can delete system permissions.');
+      alert.showError(
+        'Only System Administrators can delete system permissions. Please contact your administrator.',
+        { title: 'Permission Denied' },
+      );
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this permission?')) return;
-
-    try {
-      await axiosInstance.delete(`/permissions/${permissionId}`);
-      toast.success('Permission deleted successfully');
-      fetchPermissions();
-    } catch (error) {
-      const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosError.response?.data?.error?.message || 'Failed to delete permission');
-    }
+    alert.showConfirm('Are you sure you want to delete this permission? This action cannot be undone.', {
+      title: 'Confirm Deletion',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          await axiosInstance.delete(`/permissions/${permissionId}`);
+          toast.success('Permission deleted successfully');
+          fetchPermissions();
+        } catch (error) {
+          const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
+          alert.showError(
+            axiosError.response?.data?.error?.message || 'Failed to delete permission. Please try again.',
+            { title: 'Deletion Failed' },
+          );
+        }
+      },
+    });
   };
 
   const openEditDialog = (permission: Permission) => {

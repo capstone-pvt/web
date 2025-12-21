@@ -12,6 +12,7 @@ import { Combobox } from '@/app/components/ui/ComboBox';
 import { Button } from '@/app/components/ui/button';
 import { Award } from 'lucide-react';
 import { Input } from '@/app/components/ui/input';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 const PERFORMANCE_THRESHOLD = 3.5;
 
@@ -25,6 +26,7 @@ const trainingSuggestions: Record<string, string> = {
 };
 
 export default function ManualPredictPerformancePage() {
+  const alert = useAlert();
   const [personnelId, setPersonnelId] = useState('');
   const [semester, setSemester] = useState('');
   const [metrics, setMetrics] = useState({
@@ -50,12 +52,16 @@ export default function ManualPredictPerformancePage() {
   const handlePredict = async () => {
     // Validate required fields
     if (!personnelId || !personnelId.trim()) {
-      toast.error('Please select a personnel.');
+      alert.showWarning('Please select a personnel from the dropdown to continue.', {
+        title: 'Personnel Required',
+      });
       return;
     }
 
     if (!semester || !semester.trim()) {
-      toast.error('Please enter a semester.');
+      alert.showWarning('Please enter a semester (e.g., "1st Sem 2024") to continue.', {
+        title: 'Semester Required',
+      });
       return;
     }
 
@@ -64,7 +70,9 @@ export default function ManualPredictPerformancePage() {
     );
 
     if (Object.values(numericMetrics).some(Number.isNaN)) {
-      toast.error('Please enter valid numbers for all metrics.');
+      alert.showWarning('All metric fields must contain valid numbers between 0 and 5.', {
+        title: 'Invalid Metrics',
+      });
       return;
     }
 
@@ -91,9 +99,14 @@ export default function ManualPredictPerformancePage() {
       console.error('Prediction error:', error);
       if (isAxiosError(error)) {
         const axiosError = error as AxiosError<{ message: string }>;
-        toast.error(axiosError.response?.data?.message || 'Error getting prediction.');
+        alert.showError(
+          axiosError.response?.data?.message || 'Failed to get prediction. Please try again or contact support.',
+          { title: 'Prediction Error' },
+        );
       } else {
-        toast.error('An unexpected error occurred.');
+        alert.showError('An unexpected error occurred. Please try again.', {
+          title: 'Error',
+        });
       }
     } finally {
       setIsPredicting(false);

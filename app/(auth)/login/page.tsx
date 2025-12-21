@@ -1,25 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import { toast } from 'sonner';
 import LoginForm from '@/app/components/auth/LoginForm';
 
 export default function LoginPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    // Show notification based on logout reason
-    const reason = searchParams.get('reason');
-    if (reason === 'idle') {
-      toast.warning('You have been logged out due to inactivity. Please log in again.');
-    } else if (reason === 'device') {
-      toast.error('Your account has been logged in from another device. Please log in again.');
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     // Redirect to dashboard if already authenticated

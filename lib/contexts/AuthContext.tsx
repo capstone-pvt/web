@@ -6,6 +6,7 @@ import { authApi } from '@/lib/api';
 import { settingsApi } from '@/lib/api/settings.api';
 import { AuthContextType, AuthUser, LoginCredentials, RegisterData } from '@/types/auth.types';
 import { useIdleTimeout } from '@/lib/hooks/useIdleTimeout';
+import { useSessionAlert } from '@/lib/contexts/SessionAlertContext';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -17,6 +18,7 @@ export function AuthProvider({ children }: Readonly<{
   const [sessionTimeout, setSessionTimeout] = useState<number>(5); // Default 5 minutes
   const router = useRouter();
   const pathname = usePathname();
+  const { showIdleAlert } = useSessionAlert();
 
   const refreshUser = useCallback(async () => {
     setIsLoading(true);
@@ -77,9 +79,11 @@ export function AuthProvider({ children }: Readonly<{
   const handleIdle = useCallback(() => {
     if (user) {
       console.log('User has been idle for too long. Logging out...');
-      logout(true);
+      showIdleAlert(() => {
+        logout(true);
+      });
     }
-  }, [user, logout]);
+  }, [user, logout, showIdleAlert]);
 
   // Enable idle timeout only when user is authenticated and not on public pages
   const isPublicPage = pathname === '/login' || pathname === '/register';

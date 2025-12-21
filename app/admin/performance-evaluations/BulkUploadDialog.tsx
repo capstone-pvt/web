@@ -23,6 +23,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from '@/app/components/ui/alert';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 interface BulkUploadDialogProps {
   open: boolean;
@@ -31,6 +32,7 @@ interface BulkUploadDialogProps {
 
 export function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialogProps) {
   const queryClient = useQueryClient();
+  const alert = useAlert();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadResult, setUploadResult] = useState<BulkUploadResult | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -69,7 +71,9 @@ export function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialogProps) 
         setSelectedFile(file);
         setUploadResult(null);
       } else {
-        toast.error('Please select a valid Excel file (.xlsx, .xls, .csv)');
+        alert.showError('Please select a valid Excel file (.xlsx, .xls, or .csv). Other file formats are not supported.', {
+          title: 'Invalid File Format',
+        });
       }
     }
   };
@@ -100,7 +104,9 @@ export function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialogProps) 
         setSelectedFile(file);
         setUploadResult(null);
       } else {
-        toast.error('Please select a valid Excel file (.xlsx, .xls, .csv)');
+        alert.showError('Please select a valid Excel file (.xlsx, .xls, or .csv). Other file formats are not supported.', {
+          title: 'Invalid File Format',
+        });
       }
     }
   };
