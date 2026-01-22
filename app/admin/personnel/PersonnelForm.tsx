@@ -34,7 +34,7 @@ const formSchema = z.object({
 
 interface PersonnelFormProps {
   onSubmit: (values: z.infer<typeof formSchema>) => void;
-  defaultValues?: Personnel;
+  defaultValues?: Personnel | null;
   departments: Department[];
   isSubmitting: boolean;
 }

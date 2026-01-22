@@ -7,6 +7,7 @@ import {
   createPersonnel,
   updatePersonnel,
   deletePersonnel,
+  classifyAllPersonnel,
 } from '@/lib/api/personnel.api';
 import { getDepartments } from '@/lib/api/departments.api';
 import { Personnel, CreatePersonnelDto, UpdatePersonnelDto } from '@/types/personnel';
@@ -22,7 +23,7 @@ import { PersonnelForm } from './PersonnelForm';
 import { PersonnelTable } from './PersonnelTable';
 import { BulkUploadDialog } from './BulkUploadDialog';
 import { toast } from 'sonner';
-import { Upload } from 'lucide-react';
+import { Upload, UserCheck } from 'lucide-react';
 
 export default function PersonnelPage() {
   const queryClient = useQueryClient();
@@ -77,6 +78,19 @@ export default function PersonnelPage() {
     },
   });
 
+  const classifyMutation = useMutation({
+    mutationFn: classifyAllPersonnel,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['personnel'] });
+      toast.success(
+        `Classification complete! ${data.classified} classified, ${data.skipped} skipped.`
+      );
+    },
+    onError: () => {
+      toast.error('Failed to classify personnel.');
+    },
+  });
+
   const handleCreate = () => {
     setSelectedPersonnel(null);
     setIsDialogOpen(true);
@@ -110,6 +124,14 @@ export default function PersonnelPage() {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Personnel</h1>
         <div className="flex gap-2">
+          <Button
+            onClick={() => classifyMutation.mutate()}
+            variant="outline"
+            disabled={classifyMutation.isPending}
+          >
+            <UserCheck className="mr-2 h-4 w-4" />
+            {classifyMutation.isPending ? 'Classifying...' : 'Classify All'}
+          </Button>
           <Button onClick={() => setIsBulkUploadOpen(true)} variant="outline">
             <Upload className="mr-2 h-4 w-4" />
             Bulk Upload

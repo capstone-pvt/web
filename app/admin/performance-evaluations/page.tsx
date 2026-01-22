@@ -112,7 +112,7 @@ export default function PerformanceEvaluationsPage() {
             <Upload className="h-4 w-4" />
             Bulk Upload
           </Button>
-          <Button onClick={handleCreate} className="gap-2">
+          <Button onClick={handleCreate} className="gap-2 hidden">
             <Plus className="h-4 w-4" />
             Add Evaluation
           </Button>

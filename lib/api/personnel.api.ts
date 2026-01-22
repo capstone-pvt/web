@@ -38,3 +38,12 @@ export const predictPersonnelPerformance = async (personnelId: string): Promise<
   const response = await http.post(`/ml/predict/${personnelId}`);
   return response.data;
 };
+
+export const classifyAllPersonnel = async (): Promise<{
+  total: number;
+  classified: number;
+  skipped: number;
+}> => {
+  const response = await http.post('/personnel/classify-all');
+  return response.data;
+};

@@ -2,6 +2,7 @@
 
 import { Personnel } from '@/types/personnel';
 import { Button } from '@/app/components/ui/button';
+import { Badge } from '@/app/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -33,6 +34,7 @@ export function PersonnelTable({ personnel, onEdit, onDelete }: PersonnelTablePr
           <TableHead>Email</TableHead>
           <TableHead>Department</TableHead>
           <TableHead>Job Title</TableHead>
+          <TableHead>Performance Status</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -43,6 +45,17 @@ export function PersonnelTable({ personnel, onEdit, onDelete }: PersonnelTablePr
             <TableCell>{person.email}</TableCell>
             <TableCell>{person.department?.name}</TableCell>
             <TableCell>{person.jobTitle}</TableCell>
+            <TableCell>
+              {person.performanceStatus ? (
+                <Badge
+                  variant={person.performanceStatus === 'Performing' ? 'default' : 'destructive'}
+                >
+                  {person.performanceStatus}
+                </Badge>
+              ) : (
+                <span className="text-sm text-muted-foreground">Not classified</span>
+              )}
+            </TableCell>
             <TableCell>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

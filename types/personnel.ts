@@ -11,6 +11,8 @@ export interface Personnel {
   hireDate?: string;
   phoneNumber?: string;
   gender?: string;
+  predictedPerformance?: string;
+  performanceStatus?: 'Performing' | 'Non-Performing';
   createdAt: string;
   updatedAt: string;
 }
