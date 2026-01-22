@@ -13,7 +13,8 @@ import { PredictionResultDialog } from './PredictionResultDialog';
 
 interface PredictionData {
   prediction: number;
-  failedMetrics: string[];
+  trainedAt: Date;
+  failedMetrics?: string[];
 }
 
 export default function PredictionsPage() {

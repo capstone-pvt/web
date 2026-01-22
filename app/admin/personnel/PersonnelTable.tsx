@@ -35,6 +35,7 @@ export function PersonnelTable({ personnel, onEdit, onDelete }: PersonnelTablePr
           <TableHead>Department</TableHead>
           <TableHead>Job Title</TableHead>
           <TableHead>Performance Status</TableHead>
+          <TableHead>Excellence Status</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -54,6 +55,28 @@ export function PersonnelTable({ personnel, onEdit, onDelete }: PersonnelTablePr
                 </Badge>
               ) : (
                 <span className="text-sm text-muted-foreground">Not classified</span>
+              )}
+            </TableCell>
+            <TableCell>
+              {person.excellenceStatus && person.excellenceStatus !== 'Not Evaluated' ? (
+                <Badge
+                  variant={
+                    person.excellenceStatus === 'Excellent'
+                      ? 'default'
+                      : person.excellenceStatus === 'Good'
+                      ? 'secondary'
+                      : person.excellenceStatus === 'Average'
+                      ? 'outline'
+                      : 'destructive'
+                  }
+                >
+                  {person.excellenceStatus}
+                  {person.sixYearAverage && (
+                    <span className="ml-1 text-xs">({person.sixYearAverage.toFixed(2)})</span>
+                  )}
+                </Badge>
+              ) : (
+                <span className="text-sm text-muted-foreground">Not evaluated</span>
               )}
             </TableCell>
             <TableCell>

@@ -14,6 +14,13 @@ export interface Personnel {
   personnelType?: 'Teaching' | 'Non-Teaching';
   predictedPerformance?: string;
   performanceStatus?: 'Performing' | 'Non-Performing';
+  excellenceStatus?: 'Excellent' | 'Good' | 'Average' | 'Below Average' | 'Not Evaluated';
+  excellenceStartYear?: number;
+  excellenceEndYear?: number;
+  excellenceThreshold?: number;
+  lastExcellenceCalculation?: string;
+  sixYearAverage?: number;
+  totalSemestersEvaluated?: number;
   createdAt: string;
   updatedAt: string;
 }

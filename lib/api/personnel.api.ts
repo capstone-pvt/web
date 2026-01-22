@@ -47,3 +47,20 @@ export const classifyAllPersonnel = async (): Promise<{
   const response = await http.post('/personnel/classify-all');
   return response.data;
 };
+
+export const calculateExcellenceForAll = async (params: {
+  startYear: number;
+  endYear: number;
+  threshold?: number;
+}): Promise<any[]> => {
+  const response = await http.post('/personnel/calculate-excellence-all', params);
+  return response.data;
+};
+
+export const getExcellenceAnalytics = async (params: {
+  startYear: number;
+  endYear: number;
+}): Promise<any> => {
+  const response = await http.post('/personnel/excellence/analytics', params);
+  return response.data;
+};
