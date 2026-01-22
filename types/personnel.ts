@@ -11,6 +11,7 @@ export interface Personnel {
   hireDate?: string;
   phoneNumber?: string;
   gender?: string;
+  personnelType?: 'Teaching' | 'Non-Teaching';
   predictedPerformance?: string;
   performanceStatus?: 'Performing' | 'Non-Performing';
   createdAt: string;
@@ -27,6 +28,7 @@ export interface CreatePersonnelDto {
   hireDate?: string;
   phoneNumber?: string;
   gender?: string;
+  personnelType?: 'Teaching' | 'Non-Teaching';
 }
 
 export interface UpdatePersonnelDto extends Partial<CreatePersonnelDto> {}
