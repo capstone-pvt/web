@@ -1,0 +1,73 @@
+'use client';
+
+import { NonTeachingEvaluation } from '@/types/non-teaching-evaluation';
+import { Button } from '@/app/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/app/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/app/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
+
+interface NonTeachingEvaluationsTableProps {
+  evaluations: NonTeachingEvaluation[];
+  onEdit: (evaluation: NonTeachingEvaluation) => void;
+  onDelete: (evaluation: NonTeachingEvaluation) => void;
+}
+
+export function NonTeachingEvaluationsTable({
+  evaluations,
+  onEdit,
+  onDelete,
+}: NonTeachingEvaluationsTableProps) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Personnel</TableHead>
+          <TableHead>Semester</TableHead>
+          <TableHead>Date</TableHead>
+          <TableHead>JK</TableHead>
+          <TableHead>WQ</TableHead>
+          <TableHead>Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {evaluations.map((evaluation) => (
+          <TableRow key={evaluation._id}>
+            <TableCell>{`${evaluation.personnel.firstName} ${evaluation.personnel.lastName}`}</TableCell>
+            <TableCell>{evaluation.semester}</TableCell>
+            <TableCell>{new Date(evaluation.evaluationDate).toLocaleDateString()}</TableCell>
+            <TableCell>{evaluation.scores?.JK || 'N/A'}</TableCell>
+            <TableCell>{evaluation.scores?.WQ || 'N/A'}</TableCell>
+            <TableCell>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEdit(evaluation)}>Edit</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onDelete(evaluation)} className="text-red-600">
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}

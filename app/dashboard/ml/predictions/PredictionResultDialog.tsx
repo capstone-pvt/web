@@ -16,7 +16,7 @@ interface PredictionResultDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   personnel: Personnel | null;
-  predictionData: { prediction: number; failedMetrics: string[] } | null;
+  predictionData: { prediction: number; failedMetrics?: string[]; trainedAt?: Date } | null;
   isLoading: boolean;
 }
 
@@ -74,7 +74,7 @@ export function PredictionResultDialog({
                     Recommended Actions:
                   </h3>
                   <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2">
-                    {predictionData.failedMetrics.map(metric => (
+                    {predictionData.failedMetrics?.map(metric => (
                       <li key={metric}>
                         <strong>Enroll in Training for {metric}:</strong> {trainingSuggestions[metric] || 'Further review needed.'}
                       </li>

@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getPersonnel,
   createPersonnel,
   updatePersonnel,
   deletePersonnel,
+  classifyAllPersonnel,
+  calculateExcellenceForAll,
 } from '@/lib/api/personnel.api';
 import { getDepartments } from '@/lib/api/departments.api';
 import { Personnel, CreatePersonnelDto, UpdatePersonnelDto } from '@/types/personnel';
@@ -18,17 +20,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/app/components/ui/dialog'; // Removed DialogTrigger
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/app/components/ui/select';
 import { PersonnelForm } from './PersonnelForm';
 import { PersonnelTable } from './PersonnelTable';
 import { BulkUploadDialog } from './BulkUploadDialog';
+import { ExcellenceAnalytics } from './ExcellenceAnalytics';
 import { toast } from 'sonner';
-import { Upload } from 'lucide-react';
+import { Upload, UserCheck, Award } from 'lucide-react';
 
 export default function PersonnelPage() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [selectedPersonnel, setSelectedPersonnel] = useState<Personnel | null>(null);
+  const [excellenceFilter, setExcellenceFilter] = useState<string>('all');
 
   const { data: personnel = [], isLoading: isLoadingPersonnel } = useQuery<Personnel[]>({
     queryKey: ['personnel'],
@@ -77,6 +88,37 @@ export default function PersonnelPage() {
     },
   });
 
+  const classifyMutation = useMutation({
+    mutationFn: classifyAllPersonnel,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['personnel'] });
+      toast.success(
+        `Classification complete! ${data.classified} classified, ${data.skipped} skipped.`
+      );
+    },
+    onError: () => {
+      toast.error('Failed to classify personnel.');
+    },
+  });
+
+  const excellenceMutation = useMutation({
+    mutationFn: calculateExcellenceForAll,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['personnel'] });
+      toast.success(
+        `Excellence calculation complete! ${data.length} personnel evaluated.`
+      );
+    },
+    onError: () => {
+      toast.error('Failed to calculate excellence.');
+    },
+  });
+
+  const filteredPersonnel = useMemo(() => {
+    if (excellenceFilter === 'all') return personnel;
+    return personnel.filter((p) => p.excellenceStatus === excellenceFilter);
+  }, [personnel, excellenceFilter]);
+
   const handleCreate = () => {
     setSelectedPersonnel(null);
     setIsDialogOpen(true);
@@ -110,11 +152,49 @@ export default function PersonnelPage() {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Personnel</h1>
         <div className="flex gap-2">
+          <Button
+            onClick={() => excellenceMutation.mutate({ startYear: 2020, endYear: 2025, threshold: 4.0 })}
+            variant="outline"
+            disabled={excellenceMutation.isPending}
+          >
+            <Award className="mr-2 h-4 w-4" />
+            {excellenceMutation.isPending ? 'Calculating...' : 'Calculate Excellence'}
+          </Button>
+          <Button
+            onClick={() => classifyMutation.mutate()}
+            variant="outline"
+            disabled={classifyMutation.isPending}
+          >
+            <UserCheck className="mr-2 h-4 w-4" />
+            {classifyMutation.isPending ? 'Classifying...' : 'Classify All'}
+          </Button>
           <Button onClick={() => setIsBulkUploadOpen(true)} variant="outline">
             <Upload className="mr-2 h-4 w-4" />
             Bulk Upload
           </Button>
           <Button onClick={handleCreate}>Add Personnel</Button>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <div className="flex gap-2 items-center">
+          <label className="text-sm font-medium">Filter by Excellence:</label>
+          <Select value={excellenceFilter} onValueChange={setExcellenceFilter}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="Excellent">Excellent</SelectItem>
+              <SelectItem value="Good">Good</SelectItem>
+              <SelectItem value="Average">Average</SelectItem>
+              <SelectItem value="Below Average">Below Average</SelectItem>
+              <SelectItem value="Not Evaluated">Not Evaluated</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">
+            Showing {filteredPersonnel.length} of {personnel.length} personnel
+          </span>
         </div>
       </div>
 
@@ -137,7 +217,11 @@ export default function PersonnelPage() {
         </DialogContent>
       </Dialog>
 
-      <PersonnelTable personnel={personnel} onEdit={handleEdit} onDelete={handleDelete} />
+      <PersonnelTable personnel={filteredPersonnel} onEdit={handleEdit} onDelete={handleDelete} />
+
+      <div className="mt-8">
+        <ExcellenceAnalytics />
+      </div>
     </div>
   );
 }

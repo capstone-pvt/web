@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getPerformanceEvaluations,
-  createPerformanceEvaluation,
-  updatePerformanceEvaluation,
-  deletePerformanceEvaluation,
-} from '@/lib/api/performance-evaluations.api';
-import { CreatePerformanceEvaluationDto, PerformanceEvaluation, UpdatePerformanceEvaluationDto } from '@/types/performance-evaluation';
+  getNonTeachingEvaluations,
+  createNonTeachingEvaluation,
+  updateNonTeachingEvaluation,
+  deleteNonTeachingEvaluation,
+} from '@/lib/api/non-teaching-evaluations.api';
+import { CreateNonTeachingEvaluationDto, NonTeachingEvaluation, UpdateNonTeachingEvaluationDto } from '@/types/non-teaching-evaluation';
 import { Button } from '@/app/components/ui/button';
 import {
   Dialog,
@@ -17,56 +17,56 @@ import {
   DialogTitle,
 } from '@/app/components/ui/dialog';
 import { toast } from 'sonner';
-import { PerformanceEvaluationForm } from './PerformanceEvaluationForm';
-import { PerformanceEvaluationsTable } from './PerformanceEvaluationsTable';
-import { BulkUploadDialog } from './BulkUploadDialog';
+import { NonTeachingEvaluationForm } from './NonTeachingEvaluationForm';
+import { NonTeachingEvaluationsTable } from './NonTeachingEvaluationsTable';
+import { NonTeachingBulkUploadDialog } from './NonTeachingBulkUploadDialog';
 import { Upload, Plus } from 'lucide-react';
 
-export default function PerformanceEvaluationsPage() {
+export default function NonTeachingEvaluationsPage() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
-  const [selectedEvaluation, setSelectedEvaluation] = useState<PerformanceEvaluation | undefined>(undefined);
+  const [selectedEvaluation, setSelectedEvaluation] = useState<NonTeachingEvaluation | undefined>(undefined);
 
-  const { data: evaluations = [], isLoading } = useQuery<PerformanceEvaluation[]>({
-    queryKey: ['performance-evaluations'],
-    queryFn: getPerformanceEvaluations,
+  const { data: evaluations = [], isLoading } = useQuery<NonTeachingEvaluation[]>({
+    queryKey: ['non-teaching-evaluations'],
+    queryFn: getNonTeachingEvaluations,
   });
 
   const createMutation = useMutation({
-    mutationFn: createPerformanceEvaluation,
+    mutationFn: createNonTeachingEvaluation,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['performance-evaluations'] });
-      toast.success('Performance evaluation created successfully.');
+      queryClient.invalidateQueries({ queryKey: ['non-teaching-evaluations'] });
+      toast.success('Non-teaching evaluation created successfully.');
       setIsDialogOpen(false);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create performance evaluation.');
+      toast.error(error.response?.data?.message || 'Failed to create non-teaching evaluation.');
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: (variables: { id: string; data: UpdatePerformanceEvaluationDto }) =>
-      updatePerformanceEvaluation(variables.id, variables.data),
+    mutationFn: (variables: { id: string; data: UpdateNonTeachingEvaluationDto }) =>
+      updateNonTeachingEvaluation(variables.id, variables.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['performance-evaluations'] });
-      toast.success('Performance evaluation updated successfully.');
+      queryClient.invalidateQueries({ queryKey: ['non-teaching-evaluations'] });
+      toast.success('Non-teaching evaluation updated successfully.');
       setIsDialogOpen(false);
       setSelectedEvaluation(undefined);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update performance evaluation.');
+      toast.error(error.response?.data?.message || 'Failed to update non-teaching evaluation.');
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deletePerformanceEvaluation,
+    mutationFn: deleteNonTeachingEvaluation,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['performance-evaluations'] });
-      toast.success('Performance evaluation deleted successfully.');
+      queryClient.invalidateQueries({ queryKey: ['non-teaching-evaluations'] });
+      toast.success('Non-teaching evaluation deleted successfully.');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to delete performance evaluation.');
+      toast.error(error.response?.data?.message || 'Failed to delete non-teaching evaluation.');
     },
   });
 
@@ -75,18 +75,18 @@ export default function PerformanceEvaluationsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (evaluation: PerformanceEvaluation) => {
+  const handleEdit = (evaluation: NonTeachingEvaluation) => {
     setSelectedEvaluation(evaluation);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (evaluation: PerformanceEvaluation) => {
+  const handleDelete = (evaluation: NonTeachingEvaluation) => {
     if (window.confirm(`Are you sure you want to delete this evaluation?`)) {
       deleteMutation.mutate(evaluation._id);
     }
   };
 
-  const handleSubmit = (values: CreatePerformanceEvaluationDto) => {
+  const handleSubmit = (values: CreateNonTeachingEvaluationDto) => {
     if (selectedEvaluation) {
       updateMutation.mutate({ id: selectedEvaluation._id, data: values });
     } else {
@@ -102,9 +102,9 @@ export default function PerformanceEvaluationsPage() {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Performance Evaluations</h1>
+          <h1 className="text-2xl font-bold">Non-Teaching Personnel Evaluations</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage employee performance evaluations and bulk import data
+            Manage non-teaching staff performance evaluations and bulk import data
           </p>
         </div>
         <div className="flex gap-2">
@@ -124,7 +124,7 @@ export default function PerformanceEvaluationsPage() {
           <DialogHeader>
             <DialogTitle>{selectedEvaluation ? 'Edit Evaluation' : 'Add Evaluation'}</DialogTitle>
           </DialogHeader>
-          <PerformanceEvaluationForm
+          <NonTeachingEvaluationForm
             onSubmit={handleSubmit}
             defaultValues={selectedEvaluation}
             isSubmitting={createMutation.isPending || updateMutation.isPending}
@@ -132,9 +132,9 @@ export default function PerformanceEvaluationsPage() {
         </DialogContent>
       </Dialog>
 
-      <BulkUploadDialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen} />
+      <NonTeachingBulkUploadDialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen} />
 
-      <PerformanceEvaluationsTable
+      <NonTeachingEvaluationsTable
         evaluations={evaluations}
         onEdit={handleEdit}
         onDelete={handleDelete}

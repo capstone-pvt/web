@@ -109,7 +109,7 @@ export default function DepartmentsPage() {
           </DialogHeader>
           <DepartmentForm
             onSubmit={handleSubmit}
-            defaultValues={selectedDepartment}
+            defaultValues={selectedDepartment ?? undefined}
             isSubmitting={createMutation.isPending || updateMutation.isPending}
           />
         </DialogContent>
