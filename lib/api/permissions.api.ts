@@ -13,7 +13,28 @@ export interface Permission {
   updatedAt: string;
 }
 
+export interface CreatePermissionDto {
+  name: string;
+  displayName: string;
+  description: string;
+  resource: string;
+  action: 'create' | 'read' | 'update' | 'delete' | 'view' | 'manage' | 'execute' | 'export';
+  category: string;
+  isSystemPermission?: boolean;
+}
+
 export const permissionsApi = {
+  /**
+   * Create a new permission
+   */
+  create: async (data: CreatePermissionDto): Promise<{ permission: Permission }> => {
+    const response = await axiosInstance.post<ApiResponse<{ permission: Permission }>>(
+      '/permissions',
+      data
+    );
+    return response.data as unknown as { permission: Permission };
+  },
+
   /**
    * Get all permissions
    */
