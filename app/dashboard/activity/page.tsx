@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import axiosInstance from '@/lib/api/axios';
 import { PERMISSIONS } from '@/config/permissions';
 import PermissionGate from '@/app/components/guards/PermissionGate';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 interface AuditLog {
   _id: string;
@@ -31,6 +32,7 @@ interface ActivityStats {
 }
 
 export default function ActivityPage() {
+  const alert = useAlert();
   const [recentActivity, setRecentActivity] = useState<AuditLog[]>([]);
   const [statistics, setStatistics] = useState<ActivityStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,23 +40,46 @@ export default function ActivityPage() {
   const [resourceFilter, setResourceFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [limitFilter, setLimitFilter] = useState(50);
+  const [debouncedResource, setDebouncedResource] = useState('');
+  const [debouncedStatus, setDebouncedStatus] = useState('');
+  const [debouncedLimit, setDebouncedLimit] = useState(50);
 
   useEffect(() => {
-    fetchRecentActivity();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const timer = setTimeout(() => {
+      setDebouncedResource(resourceFilter);
+      setDebouncedStatus(statusFilter);
+      setDebouncedLimit(limitFilter);
+    }, 300);
+    return () => clearTimeout(timer);
   }, [resourceFilter, statusFilter, limitFilter]);
+
+  const fetchStatistics = useCallback(async () => {
+    try {
+      setStatsLoading(true);
+      const response = await axiosInstance.get('/audit-logs/statistics');
+
+      // After interceptor, response.data is unwrapped to { statistics }
+      setStatistics(response.data?.statistics || null);
+    } catch (error) {
+      console.error('Error fetching statistics:', error);
+      setStatistics(null);
+      alert.showError('Failed to load activity statistics.', { title: 'Load Error' });
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [alert]);
 
   useEffect(() => {
     fetchStatistics();
-  }, []);
+  }, [fetchStatistics]);
 
-  const fetchRecentActivity = async () => {
+  const fetchRecentActivity = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
-        limit: limitFilter.toString(),
-        ...(resourceFilter && { resource: resourceFilter }),
-        ...(statusFilter && { status: statusFilter })
+        limit: debouncedLimit.toString(),
+        ...(debouncedResource && { resource: debouncedResource }),
+        ...(debouncedStatus && { status: debouncedStatus })
       });
       const response = await axiosInstance.get(`/audit-logs?${params}`);
 
@@ -66,22 +91,13 @@ export default function ActivityPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedLimit, debouncedResource, debouncedStatus]);
 
-  const fetchStatistics = async () => {
-    try {
-      setStatsLoading(true);
-      const response = await axiosInstance.get('/audit-logs/statistics');
+  useEffect(() => {
+    fetchRecentActivity();
+  }, [fetchRecentActivity]);
 
-      // After interceptor, response.data is unwrapped to { statistics }
-      setStatistics(response.data?.statistics || null);
-    } catch (error) {
-      console.error('Error fetching statistics:', error);
-      setStatistics(null);
-    } finally {
-      setStatsLoading(false);
-    }
-  };
+  
 
   const getActionBadgeColor = (action: string) => {
     if (action.includes('create')) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';

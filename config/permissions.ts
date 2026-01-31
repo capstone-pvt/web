@@ -27,7 +27,11 @@ export const PERMISSIONS = {
 
   // Settings
   SETTINGS_VIEW: 'settings.view',
-  SETTINGS_MANAGE: 'settings.manage'
+  SETTINGS_MANAGE: 'settings.manage',
+
+  // Evaluation Forms
+  EVALUATION_FORMS_READ: 'evaluation-forms.read',
+  EVALUATION_FORMS_MANAGE: 'evaluation-forms.manage'
 } as const;
 
 export const PERMISSION_CATEGORIES = {
@@ -36,7 +40,8 @@ export const PERMISSION_CATEGORIES = {
   PERMISSION_MANAGEMENT: 'Permission Management',
   PROJECT_MANAGEMENT: 'Project Management',
   ANALYTICS: 'Analytics',
-  SETTINGS_MANAGEMENT: 'Settings Management'
+  SETTINGS_MANAGEMENT: 'Settings Management',
+  EVALUATION_FORMS: 'Evaluation Forms'
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;

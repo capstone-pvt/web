@@ -48,13 +48,16 @@ export function NonTeachingBulkUploadDialog({ open, onOpenChange }: NonTeachingB
           `Successfully uploaded ${result.successfulEvaluations} evaluations for ${result.successfulPersonnel} personnel!`
         );
       } else {
-        toast.warning(
+        alert.showWarning(
           `Uploaded with ${result.errors.length} errors. Check details below.`
         );
       }
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to upload file.');
+      alert.showError(
+        error.response?.data?.message || 'Failed to upload file.',
+        { title: 'Upload Failed' },
+      );
     },
   });
 
@@ -130,7 +133,9 @@ export function NonTeachingBulkUploadDialog({ open, onOpenChange }: NonTeachingB
       document.body.removeChild(a);
       toast.success('Template downloaded successfully!');
     } catch (error) {
-      toast.error('Failed to download template.');
+      alert.showError('Failed to download template.', {
+        title: 'Download Failed',
+      });
     }
   };
 

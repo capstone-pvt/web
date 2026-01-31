@@ -6,6 +6,7 @@ import {
   BatchPredictDto,
 } from '@/types/ml.types';
 import { toast } from 'sonner';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 /**
  * Hook to get all predictions with filters
@@ -44,6 +45,7 @@ export function useLatestPrediction(personnelId: string) {
  */
 export function usePredictPerformance() {
   const queryClient = useQueryClient();
+  const alert = useAlert();
 
   return useMutation({
     mutationFn: (personnelId: string) => mlApi.predictPerformance(personnelId),
@@ -55,7 +57,9 @@ export function usePredictPerformance() {
       queryClient.invalidateQueries({ queryKey: ['ml-latest-prediction', personnelId] });
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to generate prediction');
+      alert.showError(error.message || 'Failed to generate prediction', {
+        title: 'Prediction Failed',
+      });
     },
   });
 }
@@ -65,6 +69,7 @@ export function usePredictPerformance() {
  */
 export function useBatchPredict() {
   const queryClient = useQueryClient();
+  const alert = useAlert();
 
   return useMutation({
     mutationFn: (data: BatchPredictDto) => mlApi.batchPredict(data),
@@ -82,7 +87,9 @@ export function useBatchPredict() {
       });
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to generate batch predictions');
+      alert.showError(error.message || 'Failed to generate batch predictions', {
+        title: 'Batch Prediction Failed',
+      });
     },
   });
 }

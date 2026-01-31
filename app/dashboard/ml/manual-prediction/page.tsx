@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import axios from '@/lib/api/axios';
@@ -39,6 +39,7 @@ export default function ManualPredictPerformancePage() {
   const [existingPrediction, setExistingPrediction] = useState<any>(null);
   const [isCheckingExisting, setIsCheckingExisting] = useState(false);
   const router = useRouter();
+  const checkRequestId = useRef(0);
 
   const { data: personnelList = [], isLoading: isLoadingPersonnel } = useQuery<Personnel[]>({
     queryKey: ['personnel'],
@@ -49,28 +50,29 @@ export default function ManualPredictPerformancePage() {
 
   // Check for existing prediction when personnel or semester changes
   useEffect(() => {
-    const checkExisting = async () => {
+    const requestId = ++checkRequestId.current;
+    const timer = setTimeout(async () => {
       if (personnelId && semester && semester.trim()) {
         setIsCheckingExisting(true);
         try {
           const result = await mlApi.checkExistingPrediction(personnelId, semester);
-          if (result.exists) {
-            setExistingPrediction(result.evaluation);
-          } else {
-            setExistingPrediction(null);
-          }
+          if (checkRequestId.current !== requestId) return;
+          setExistingPrediction(result.exists ? result.evaluation : null);
         } catch (error) {
+          if (checkRequestId.current !== requestId) return;
           console.error('Error checking existing prediction:', error);
           setExistingPrediction(null);
         } finally {
-          setIsCheckingExisting(false);
+          if (checkRequestId.current === requestId) {
+            setIsCheckingExisting(false);
+          }
         }
       } else {
         setExistingPrediction(null);
       }
-    };
+    }, 300);
 
-    checkExisting();
+    return () => clearTimeout(timer);
   }, [personnelId, semester]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,7 +122,7 @@ export default function ManualPredictPerformancePage() {
       setFailedMetrics(data.failedMetrics || []);
 
       if (data.failedMetrics && data.failedMetrics.length > 0) {
-        toast.error('Predicted performance indicates need for improvement.');
+        alert.showWarning('Predicted performance indicates need for improvement.');
       } else {
         toast.success('Prediction successful!');
       }

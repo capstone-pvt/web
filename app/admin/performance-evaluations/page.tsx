@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getPerformanceEvaluations,
@@ -21,17 +21,30 @@ import { PerformanceEvaluationForm } from './PerformanceEvaluationForm';
 import { PerformanceEvaluationsTable } from './PerformanceEvaluationsTable';
 import { BulkUploadDialog } from './BulkUploadDialog';
 import { Upload, Plus } from 'lucide-react';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 export default function PerformanceEvaluationsPage() {
   const queryClient = useQueryClient();
+  const alert = useAlert();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState<PerformanceEvaluation | undefined>(undefined);
 
-  const { data: evaluations = [], isLoading } = useQuery<PerformanceEvaluation[]>({
+  const {
+    data: evaluations = [],
+    isLoading,
+    isError,
+  } = useQuery<PerformanceEvaluation[]>({
     queryKey: ['performance-evaluations'],
     queryFn: getPerformanceEvaluations,
   });
+  useEffect(() => {
+    if (isError) {
+      alert.showError('Failed to load performance evaluations.', {
+        title: 'Load Failed',
+      });
+    }
+  }, [isError]);
 
   const createMutation = useMutation({
     mutationFn: createPerformanceEvaluation,
@@ -41,7 +54,10 @@ export default function PerformanceEvaluationsPage() {
       setIsDialogOpen(false);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create performance evaluation.');
+      alert.showError(
+        error.response?.data?.message || 'Failed to create performance evaluation.',
+        { title: 'Create Failed' },
+      );
     },
   });
 
@@ -55,7 +71,10 @@ export default function PerformanceEvaluationsPage() {
       setSelectedEvaluation(undefined);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update performance evaluation.');
+      alert.showError(
+        error.response?.data?.message || 'Failed to update performance evaluation.',
+        { title: 'Update Failed' },
+      );
     },
   });
 
@@ -66,7 +85,10 @@ export default function PerformanceEvaluationsPage() {
       toast.success('Performance evaluation deleted successfully.');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to delete performance evaluation.');
+      alert.showError(
+        error.response?.data?.message || 'Failed to delete performance evaluation.',
+        { title: 'Delete Failed' },
+      );
     },
   });
 
@@ -81,9 +103,11 @@ export default function PerformanceEvaluationsPage() {
   };
 
   const handleDelete = (evaluation: PerformanceEvaluation) => {
-    if (window.confirm(`Are you sure you want to delete this evaluation?`)) {
-      deleteMutation.mutate(evaluation._id);
-    }
+    alert.showConfirm('Are you sure you want to delete this evaluation?', {
+      title: 'Delete Evaluation',
+      confirmText: 'Delete',
+      onConfirm: () => deleteMutation.mutate(evaluation._id),
+    });
   };
 
   const handleSubmit = (values: CreatePerformanceEvaluationDto) => {

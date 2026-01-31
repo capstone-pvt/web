@@ -36,6 +36,11 @@ const navigation: NavItem[] = [
       { name: 'Personnel', href: '/admin/personnel' },
       { name: 'Departments', href: '/admin/departments' },
       { name: 'Performance', href: '/admin/performance-evaluations' },
+      {
+        name: 'Evaluation Forms',
+        href: '/admin/evaluation-forms',
+        permission: PERMISSIONS.EVALUATION_FORMS_READ,
+      },
       { name: 'Non-Teaching Eval', href: '/admin/non-teaching-evaluations' },
     ],
   },

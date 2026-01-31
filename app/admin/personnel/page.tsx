@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getPersonnel,
@@ -33,23 +33,44 @@ import { BulkUploadDialog } from './BulkUploadDialog';
 import { ExcellenceAnalytics } from './ExcellenceAnalytics';
 import { toast } from 'sonner';
 import { Upload, UserCheck, Award } from 'lucide-react';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 export default function PersonnelPage() {
   const queryClient = useQueryClient();
+  const alert = useAlert();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [selectedPersonnel, setSelectedPersonnel] = useState<Personnel | null>(null);
   const [excellenceFilter, setExcellenceFilter] = useState<string>('all');
 
-  const { data: personnel = [], isLoading: isLoadingPersonnel } = useQuery<Personnel[]>({
+  const {
+    data: personnel = [],
+    isLoading: isLoadingPersonnel,
+    isError: isPersonnelError,
+  } = useQuery<Personnel[]>({
     queryKey: ['personnel'],
     queryFn: getPersonnel,
   });
 
-  const { data: departments = [], isLoading: isLoadingDepartments } = useQuery<Department[]>({
+  const {
+    data: departments = [],
+    isLoading: isLoadingDepartments,
+    isError: isDepartmentsError,
+  } = useQuery<Department[]>({
     queryKey: ['departments'],
     queryFn: getDepartments,
   });
+  useEffect(() => {
+    if (isPersonnelError) {
+      alert.showError('Failed to load personnel.', { title: 'Load Failed' });
+    }
+  }, [isPersonnelError]);
+
+  useEffect(() => {
+    if (isDepartmentsError) {
+      alert.showError('Failed to load departments.', { title: 'Load Failed' });
+    }
+  }, [isDepartmentsError]);
 
   const createMutation = useMutation({
     mutationFn: createPersonnel,
@@ -59,7 +80,7 @@ export default function PersonnelPage() {
       setIsDialogOpen(false);
     },
     onError: () => {
-      toast.error('Failed to create personnel.');
+      alert.showError('Failed to create personnel.', { title: 'Create Failed' });
     },
   });
 
@@ -73,7 +94,7 @@ export default function PersonnelPage() {
       setSelectedPersonnel(null);
     },
     onError: () => {
-      toast.error('Failed to update personnel.');
+      alert.showError('Failed to update personnel.', { title: 'Update Failed' });
     },
   });
 
@@ -84,7 +105,7 @@ export default function PersonnelPage() {
       toast.success('Personnel deleted successfully.');
     },
     onError: () => {
-      toast.error('Failed to delete personnel.');
+      alert.showError('Failed to delete personnel.', { title: 'Delete Failed' });
     },
   });
 
@@ -97,7 +118,9 @@ export default function PersonnelPage() {
       );
     },
     onError: () => {
-      toast.error('Failed to classify personnel.');
+      alert.showError('Failed to classify personnel.', {
+        title: 'Classification Failed',
+      });
     },
   });
 
@@ -110,7 +133,9 @@ export default function PersonnelPage() {
       );
     },
     onError: () => {
-      toast.error('Failed to calculate excellence.');
+      alert.showError('Failed to calculate excellence.', {
+        title: 'Calculation Failed',
+      });
     },
   });
 
@@ -130,9 +155,14 @@ export default function PersonnelPage() {
   };
 
   const handleDelete = (person: Personnel) => {
-    if (window.confirm(`Are you sure you want to delete ${person.firstName} ${person.lastName}?`)) {
-      deleteMutation.mutate(person._id);
-    }
+    alert.showConfirm(
+      `Are you sure you want to delete ${person.firstName} ${person.lastName}?`,
+      {
+        title: 'Delete Personnel',
+        confirmText: 'Delete',
+        onConfirm: () => deleteMutation.mutate(person._id),
+      },
+    );
   };
 
   const handleSubmit = (values: CreatePersonnelDto | UpdatePersonnelDto) => {

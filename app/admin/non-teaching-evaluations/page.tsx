@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getNonTeachingEvaluations,
@@ -21,17 +21,30 @@ import { NonTeachingEvaluationForm } from './NonTeachingEvaluationForm';
 import { NonTeachingEvaluationsTable } from './NonTeachingEvaluationsTable';
 import { NonTeachingBulkUploadDialog } from './NonTeachingBulkUploadDialog';
 import { Upload, Plus } from 'lucide-react';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 export default function NonTeachingEvaluationsPage() {
   const queryClient = useQueryClient();
+  const alert = useAlert();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState<NonTeachingEvaluation | undefined>(undefined);
 
-  const { data: evaluations = [], isLoading } = useQuery<NonTeachingEvaluation[]>({
+  const {
+    data: evaluations = [],
+    isLoading,
+    isError,
+  } = useQuery<NonTeachingEvaluation[]>({
     queryKey: ['non-teaching-evaluations'],
     queryFn: getNonTeachingEvaluations,
   });
+  useEffect(() => {
+    if (isError) {
+      alert.showError('Failed to load non-teaching evaluations.', {
+        title: 'Load Failed',
+      });
+    }
+  }, [isError]);
 
   const createMutation = useMutation({
     mutationFn: createNonTeachingEvaluation,
@@ -41,7 +54,10 @@ export default function NonTeachingEvaluationsPage() {
       setIsDialogOpen(false);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create non-teaching evaluation.');
+      alert.showError(
+        error.response?.data?.message || 'Failed to create non-teaching evaluation.',
+        { title: 'Create Failed' },
+      );
     },
   });
 
@@ -55,7 +71,10 @@ export default function NonTeachingEvaluationsPage() {
       setSelectedEvaluation(undefined);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update non-teaching evaluation.');
+      alert.showError(
+        error.response?.data?.message || 'Failed to update non-teaching evaluation.',
+        { title: 'Update Failed' },
+      );
     },
   });
 
@@ -66,7 +85,10 @@ export default function NonTeachingEvaluationsPage() {
       toast.success('Non-teaching evaluation deleted successfully.');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to delete non-teaching evaluation.');
+      alert.showError(
+        error.response?.data?.message || 'Failed to delete non-teaching evaluation.',
+        { title: 'Delete Failed' },
+      );
     },
   });
 
@@ -81,9 +103,11 @@ export default function NonTeachingEvaluationsPage() {
   };
 
   const handleDelete = (evaluation: NonTeachingEvaluation) => {
-    if (window.confirm(`Are you sure you want to delete this evaluation?`)) {
-      deleteMutation.mutate(evaluation._id);
-    }
+    alert.showConfirm('Are you sure you want to delete this evaluation?', {
+      title: 'Delete Evaluation',
+      confirmText: 'Delete',
+      onConfirm: () => deleteMutation.mutate(evaluation._id),
+    });
   };
 
   const handleSubmit = (values: CreateNonTeachingEvaluationDto) => {

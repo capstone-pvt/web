@@ -12,9 +12,11 @@ import { Badge } from '@/app/components/ui/badge';
 import { Separator } from '@/app/components/ui/separator';
 import { Upload, Brain, Info, TrendingUp, Layers, Link as LinkIcon } from 'lucide-react';
 import Link from 'next/link';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 export default function TrainingPage() {
   const [file, setFile] = useState<File | null>(null);
+  const alert = useAlert();
 
   const trainMutation = useMutation({
     mutationFn: (formData: FormData) => {
@@ -28,7 +30,10 @@ export default function TrainingPage() {
       toast.success(`Model trained successfully with ${response.data.records} records.`);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to train model.');
+      alert.showError(
+        error.response?.data?.message || 'Failed to train model.',
+        { title: 'Training Failed' },
+      );
     },
   });
 
@@ -40,7 +45,7 @@ export default function TrainingPage() {
 
   const handleSubmit = () => {
     if (!file) {
-      toast.error('Please select a file to upload.');
+      alert.showWarning('Please select a file to upload.');
       return;
     }
 

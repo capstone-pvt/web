@@ -11,10 +11,12 @@ import { Input } from '@/app/components/ui/input';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { Button } from '@/app/components/ui/button';
 import { toast } from 'sonner';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 const SettingsPage = () => {
   const { setTitle } = useHeader();
   const { settings, loading, refetch } = useSettings();
+  const alert = useAlert();
   const [formData, setFormData] = useState<Partial<UpdateSettingsDto>>({});
   const [saving, setSaving] = useState(false);
 
@@ -49,7 +51,7 @@ const SettingsPage = () => {
       refetch(); // Refetch settings to update context
     } catch (error) {
       console.error('Failed to update settings', error);
-      toast.error('Failed to update settings.');
+      alert.showError('Failed to update settings.', { title: 'Update Failed' });
     } finally {
       setSaving(false);
     }

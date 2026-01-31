@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { Sparkles } from 'lucide-react';
 import { PredictionResultDialog } from './PredictionResultDialog';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 interface PredictionData {
   prediction: number;
@@ -19,6 +20,7 @@ interface PredictionData {
 
 export default function PredictionsPage() {
   const queryClient = useQueryClient();
+  const alert = useAlert();
   const [selectedPersonnel, setSelectedPersonnel] = useState<Personnel | null>(null);
   const [predictionData, setPredictionData] = useState<PredictionData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -36,7 +38,10 @@ export default function PredictionsPage() {
       toast.success(`Prediction complete for ${selectedPersonnel?.firstName}.`);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to get prediction.');
+      alert.showError(
+        error.response?.data?.message || 'Failed to get prediction.',
+        { title: 'Prediction Failed' },
+      );
       setIsDialogOpen(false); // Close dialog on error
     },
   });
