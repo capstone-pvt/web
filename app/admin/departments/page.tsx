@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getDepartments,
@@ -26,6 +26,8 @@ export default function DepartmentsPage() {
   const alert = useAlert();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const {
     data: departments = [],
@@ -104,6 +106,13 @@ export default function DepartmentsPage() {
     }
   };
 
+  const paginatedDepartments = useMemo(() => {
+    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+    return departments.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [departments, page]);
+
+  const totalPages = Math.ceil(departments.length / ITEMS_PER_PAGE);
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -128,7 +137,16 @@ export default function DepartmentsPage() {
         </DialogContent>
       </Dialog>
 
-      <DepartmentsTable departments={departments} onEdit={handleEdit} onDelete={handleDelete} />
+      <DepartmentsTable
+        departments={paginatedDepartments}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        pagination={{
+          currentPage: page,
+          totalPages: totalPages,
+          onPageChange: setPage,
+        }}
+      />
     </div>
   );
 }

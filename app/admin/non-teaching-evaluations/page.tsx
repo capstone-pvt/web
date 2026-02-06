@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getNonTeachingEvaluations,
@@ -29,6 +29,8 @@ export default function NonTeachingEvaluationsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState<NonTeachingEvaluation | undefined>(undefined);
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const {
     data: evaluations = [],
@@ -118,6 +120,13 @@ export default function NonTeachingEvaluationsPage() {
     }
   };
 
+  const paginatedEvaluations = useMemo(() => {
+    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+    return evaluations.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [evaluations, page]);
+
+  const totalPages = Math.ceil(evaluations.length / ITEMS_PER_PAGE);
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -159,9 +168,14 @@ export default function NonTeachingEvaluationsPage() {
       <NonTeachingBulkUploadDialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen} />
 
       <NonTeachingEvaluationsTable
-        evaluations={evaluations}
+        evaluations={paginatedEvaluations}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        pagination={{
+          currentPage: page,
+          totalPages: totalPages,
+          onPageChange: setPage,
+        }}
       />
     </div>
   );

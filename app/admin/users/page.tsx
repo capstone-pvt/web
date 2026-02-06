@@ -232,29 +232,12 @@ export default function UsersPage() {
               columns={columns}
               loading={loading}
               emptyMessage="No users found"
+              pagination={{
+                currentPage: page,
+                totalPages: totalPages,
+                onPageChange: setPage,
+              }}
             />
-
-            {totalPages > 1 && (
-              <div className="flex justify-between items-center mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>

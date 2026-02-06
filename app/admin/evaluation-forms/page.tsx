@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from '@/app/components/ui/card';
 import { Label } from '@/app/components/ui/label';
+import { Checkbox } from '@/app/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -22,18 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/app/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/app/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/app/components/ui/tabs';
 import {
   createEvaluationForm,
   deleteEvaluationForm,
   getEvaluationForms,
-  updateEvaluationForm,
 } from '@/lib/api/evaluation-forms.api';
 import { useAlert } from '@/lib/contexts/AlertContext';
 import { PERMISSIONS } from '@/config/permissions';
@@ -56,6 +50,7 @@ const emptyForm: CreateEvaluationFormDto = {
   name: '',
   audience: 'teaching',
   description: '',
+  evaluatorOptions: ['Student'],
   scale: defaultScale,
   sections: [],
 };
@@ -67,6 +62,7 @@ const teachingTemplate: CreateEvaluationFormDto = {
   audience: 'teaching',
   description:
     'Teacher Evaluation on Teaching Performance (New Normal). Scale: 5 Excellent, 4 Very Satisfactory, 3 Satisfactory, 2 Fair, 1 Poor.',
+  evaluatorOptions: ['Student'],
   scale: defaultScale,
   sections: [
     {
@@ -142,6 +138,21 @@ const teachingTemplate: CreateEvaluationFormDto = {
   ],
 };
 
+const evaluatorOptionsMap: Record<CreateEvaluationFormDto['audience'], string[]> =
+  {
+    teaching: ['Student'],
+    'non-teaching': ['Administrator/Head', 'Peer', 'Self'],
+  };
+
+const normalizeEvaluatorOptions = (
+  options: string[] | undefined,
+  audience: CreateEvaluationFormDto['audience'],
+) => {
+  const allowed = evaluatorOptionsMap[audience];
+  const filtered = (options || []).filter((option) => allowed.includes(option));
+  return filtered.length > 0 ? filtered : allowed;
+};
+
 type DraftItem = {
   id: string;
   text: string;
@@ -164,6 +175,7 @@ const toDraftForm = (form: CreateEvaluationFormDto): DraftForm => ({
   name: form.name,
   audience: form.audience,
   description: form.description,
+  evaluatorOptions: normalizeEvaluatorOptions(form.evaluatorOptions, form.audience),
   scale: form.scale || defaultScale,
   sections: (form.sections || []).map((section) => ({
     id: createId(),
@@ -179,6 +191,7 @@ const toDtoForm = (form: DraftForm): CreateEvaluationFormDto => ({
   name: form.name,
   audience: form.audience,
   description: form.description,
+  evaluatorOptions: form.evaluatorOptions,
   scale: form.scale,
   sections: form.sections.map((section) => ({
     title: section.title,
@@ -227,13 +240,10 @@ export default function EvaluationFormsPage() {
   const queryClient = useQueryClient();
   const alert = useAlert();
   const canManageForms = usePermission(PERMISSIONS.EVALUATION_FORMS_MANAGE);
-  const [selectedForm, setSelectedForm] = useState<EvaluationForm | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [createForm, setCreateForm] = useState<DraftForm>(() =>
     toDraftForm(emptyForm),
   );
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [editForm, setEditForm] = useState<DraftForm | null>(null);
 
   const { data: forms = [], isLoading } = useQuery<EvaluationForm[]>({
     queryKey: ['evaluation-forms'],
@@ -280,24 +290,6 @@ export default function EvaluationFormsPage() {
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: (variables: { id: string; data: CreateEvaluationFormDto }) =>
-      updateEvaluationForm(variables.id, variables.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['evaluation-forms'] });
-      toast.success('Evaluation form updated.');
-      setIsEditDialogOpen(false);
-      setSelectedForm(null);
-      setEditForm(null);
-    },
-    onError: (error: any) => {
-      alert.showError(
-        error.response?.data?.message || 'Failed to update form.',
-        { title: 'Update Failed' },
-      );
-    },
-  });
-
   const deleteMutation = useMutation({
     mutationFn: deleteEvaluationForm,
     onSuccess: () => {
@@ -321,18 +313,6 @@ export default function EvaluationFormsPage() {
     [forms],
   );
 
-  const handleOpenEdit = (form: EvaluationForm) => {
-    setSelectedForm(form);
-    setEditForm(toDraftForm({
-      name: form.name,
-      audience: form.audience,
-      description: form.description || '',
-      scale: form.scale?.length ? form.scale : defaultScale,
-      sections: form.sections || [],
-    }));
-    setIsEditDialogOpen(true);
-  };
-
   const handleSaveCreate = () => {
     if (!canManageForms) {
       alert.showWarning('You do not have permission to manage evaluation forms.');
@@ -354,22 +334,6 @@ export default function EvaluationFormsPage() {
         localStorage.removeItem(CREATE_FORM_STORAGE_KEY);
         setLastSavedAt(null);
       },
-    });
-  };
-
-  const handleSaveEdit = () => {
-    if (!canManageForms) {
-      alert.showWarning('You do not have permission to manage evaluation forms.');
-      return;
-    }
-    if (!editForm || !selectedForm) return;
-    if (!editForm.name.trim()) {
-      alert.showWarning('Form name is required.');
-      return;
-    }
-    updateMutation.mutate({
-      id: selectedForm._id,
-      data: toDtoForm(editForm),
     });
   };
 
@@ -533,6 +497,10 @@ export default function EvaluationFormsPage() {
                     setCreateForm((current) => ({
                       ...current,
                       audience: value as CreateEvaluationFormDto['audience'],
+                      evaluatorOptions: normalizeEvaluatorOptions(
+                        current.evaluatorOptions,
+                        value as CreateEvaluationFormDto['audience'],
+                      ),
                     }))
                   }
                 >
@@ -560,6 +528,39 @@ export default function EvaluationFormsPage() {
                   placeholder="Outline sections, scale, or instructions."
                   rows={3}
                 />
+              </div>
+
+              <div className="space-y-3">
+                <Label>Evaluators</Label>
+                <div className="space-y-2">
+                  {evaluatorOptionsMap[createForm.audience].map((option) => {
+                    const checked = (createForm.evaluatorOptions || []).includes(option);
+                    return (
+                      <label key={option} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(value) =>
+                            setCreateForm((current) => {
+                              const next = value
+                                ? [...(current.evaluatorOptions || []), option]
+                                : (current.evaluatorOptions || []).filter(
+                                    (item) => item !== option,
+                                  );
+                              return {
+                                ...current,
+                                evaluatorOptions: normalizeEvaluatorOptions(
+                                  next,
+                                  current.audience,
+                                ),
+                              };
+                            })
+                          }
+                        />
+                        <span>{option}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -734,6 +735,22 @@ export default function EvaluationFormsPage() {
                   </div>
                 )}
 
+                {(createForm.evaluatorOptions || []).length > 0 && (
+                  <div className="text-sm">
+                    <p className="font-semibold mb-2">Evaluators</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(createForm.evaluatorOptions || []).map((option) => (
+                        <span
+                          key={option}
+                          className="px-2 py-1 rounded border text-xs bg-background"
+                        >
+                          {option}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {createForm.sections.map((section, sectionIndex) => (
                   <div key={section.id} className="space-y-2">
                     <p className="font-semibold">{section.title}</p>
@@ -793,345 +810,6 @@ export default function EvaluationFormsPage() {
         </CardContent>
       </Card>
 
-      <Dialog
-        open={isEditDialogOpen}
-        onOpenChange={(open) => {
-          setIsEditDialogOpen(open);
-          if (!open) {
-            setEditForm(null);
-            setSelectedForm(null);
-          }
-        }}
-      >
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>
-              Edit Evaluation Form
-            </DialogTitle>
-          </DialogHeader>
-
-          {editForm && (
-          <Tabs defaultValue="edit">
-            <TabsList>
-              <TabsTrigger value="edit">Edit</TabsTrigger>
-              <TabsTrigger value="preview">Preview</TabsTrigger>
-            </TabsList>
-            <TabsContent value="edit" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-form-name">Form name</Label>
-                <Input
-                  id="edit-form-name"
-                  value={editForm.name}
-                  onChange={(event) =>
-                    setEditForm((current) =>
-                      current
-                        ? { ...current, name: event.target.value }
-                        : current,
-                    )
-                  }
-                  placeholder="e.g., Teaching Performance Evaluation"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Audience</Label>
-                <Select
-                  value={editForm.audience}
-                  onValueChange={(value) =>
-                    setEditForm((current) =>
-                      current
-                        ? {
-                            ...current,
-                            audience: value as CreateEvaluationFormDto['audience'],
-                          }
-                        : current,
-                    )
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select audience" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="teaching">Teaching personnel</SelectItem>
-                    <SelectItem value="non-teaching">Non-teaching personnel</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-form-description">Description</Label>
-                <Textarea
-                  id="edit-form-description"
-                  value={editForm.description || ''}
-                  onChange={(event) =>
-                    setEditForm((current) =>
-                      current
-                        ? { ...current, description: event.target.value }
-                        : current,
-                    )
-                  }
-                  placeholder="Outline sections, scale, or instructions."
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label>Scale</Label>
-                <div className="space-y-2">
-                  {(editForm.scale || []).map((item, idx) => (
-                    <div key={item.value} className="flex gap-2">
-                      <Input
-                        type="number"
-                        value={item.value}
-                        onChange={(event) =>
-                          setEditForm((current) =>
-                            current
-                              ? updateScale(current, idx, 'value', event.target.value)
-                              : current,
-                          )
-                        }
-                        className="w-24"
-                      />
-                      <Input
-                        value={item.label}
-                        onChange={(event) =>
-                          setEditForm((current) =>
-                            current
-                              ? updateScale(current, idx, 'label', event.target.value)
-                              : current,
-                          )
-                        }
-                        placeholder="Label"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <Label>Sections</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      setEditForm((current) => (current ? addSection(current) : current))
-                    }
-                  >
-                    Add section
-                  </Button>
-                </div>
-                {editForm.sections.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No sections yet. Add one to start building the form.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {editForm.sections.map((section) => (
-                      <div key={section.id} className="border rounded-lg p-3 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Input
-                            value={section.title}
-                            onChange={(event) =>
-                              setEditForm((current) =>
-                                current
-                                  ? updateSectionTitle(
-                                      current,
-                                      section.id,
-                                      event.target.value,
-                                    )
-                                  : current,
-                              )
-                            }
-                            placeholder="Section title"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            className="text-red-500 hover:text-red-600"
-                            onClick={() =>
-                              setEditForm((current) =>
-                                current ? removeSection(current, section.id) : current,
-                              )
-                            }
-                          >
-                            Remove
-                          </Button>
-                        </div>
-
-                        <div className="space-y-2">
-                          {section.items.map((item) => (
-                            <div key={item.id} className="flex gap-2">
-                              <Input
-                                value={item.text}
-                                onChange={(event) =>
-                                  setEditForm((current) =>
-                                    current
-                                      ? updateItem(
-                                          current,
-                                          section.id,
-                                          item.id,
-                                          event.target.value,
-                                        )
-                                      : current,
-                                  )
-                                }
-                                placeholder="Item"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                className="text-red-500 hover:text-red-600"
-                                onClick={() =>
-                                  setEditForm((current) =>
-                                    current ? removeItem(current, section.id, item.id) : current,
-                                  )
-                                }
-                              >
-                                Remove
-                              </Button>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() =>
-                              setEditForm((current) =>
-                                current ? addItem(current, section.id) : current,
-                              )
-                            }
-                          >
-                            Add item
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-2 justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    setEditForm((current) =>
-                      current ? handleUseTeachingTemplate(current) : current,
-                    )
-                  }
-                >
-                  Use teaching template
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSaveEdit}
-                  disabled={updateMutation.isPending}
-                >
-                  Save changes
-                </Button>
-              </div>
-            </TabsContent>
-            <TabsContent value="preview" className="space-y-4">
-              <div className="flex justify-end gap-2">
-                {selectedForm && (
-                  <Button asChild type="button" variant="outline">
-                    <Link href={`/admin/evaluation-forms/${selectedForm._id}/print`} target="_blank">
-                      Open printable page
-                    </Link>
-                  </Button>
-                )}
-                <Button type="button" variant="outline" onClick={() => window.print()}>
-                  Print preview
-                </Button>
-              </div>
-              <div className="border rounded-lg p-4 space-y-4 bg-muted/20 print-area">
-                <div>
-                  <h2 className="text-xl font-semibold">
-                    {editForm.name || 'Untitled Evaluation Form'}
-                  </h2>
-                  {editForm.description && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {editForm.description}
-                    </p>
-                  )}
-                </div>
-
-                {(editForm.scale || []).length > 0 && (
-                  <div className="text-sm">
-                    <p className="font-semibold mb-2">Rating Scale</p>
-                    <div className="flex flex-wrap gap-2">
-                      {(editForm.scale || []).map((item) => (
-                        <span
-                          key={`${item.value}-${item.label}`}
-                          className="px-2 py-1 rounded border text-xs bg-background"
-                        >
-                          {item.value} = {item.label}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {editForm.sections.map((section) => (
-                  <div key={section.id} className="space-y-2">
-                    <p className="font-semibold">{section.title}</p>
-                    {section.items.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No items added yet.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {section.items.map((item, itemIndex) => (
-                          <div
-                            key={item.id}
-                            className="flex items-center justify-between gap-4 border rounded-md px-3 py-2 bg-background"
-                          >
-                            <span className="text-sm">
-                              {itemIndex + 1}. {item.text || 'Untitled item'}
-                            </span>
-                            <div className="flex gap-1">
-                              {(editForm.scale || []).map((scaleItem) => (
-                                <span
-                                  key={`${scaleItem.value}-${item.id}`}
-                                  className="w-6 h-6 flex items-center justify-center border rounded text-xs"
-                                >
-                                  {scaleItem.value}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <style jsx global>{`
-                @media print {
-                  body * {
-                    visibility: hidden;
-                  }
-                  .print-area,
-                  .print-area * {
-                    visibility: visible;
-                  }
-                  .print-area {
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    width: 100%;
-                    background: white !important;
-                    border: none !important;
-                    padding: 0 !important;
-                  }
-                }
-              `}</style>
-            </TabsContent>
-          </Tabs>
-          )}
-        </DialogContent>
-      </Dialog>
-
       <Card>
         <CardHeader>
           <CardTitle>Saved Forms</CardTitle>
@@ -1156,18 +834,39 @@ export default function EvaluationFormsPage() {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleOpenEdit(form)}
-                    >
-                      Edit
-                    </Button>
-                    <Button asChild type="button" variant="outline">
-                      <Link href={`/admin/evaluation-forms/${form._id}/print`} target="_blank">
+                    {form._id && form._id !== 'undefined' && form._id !== 'null' ? (
+                      <Button asChild type="button" variant="outline">
+                        <Link href={`/admin/evaluation-forms/${form._id}/edit`}>
+                          Edit
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button type="button" variant="outline" disabled title="Missing form id">
+                        Edit
+                      </Button>
+                    )}
+                    {form._id && form._id !== 'undefined' && form._id !== 'null' ? (
+                      <Button asChild type="button" variant="outline">
+                        <Link href={`/admin/evaluation-forms/${form._id}/responses`}>
+                          Responses
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button type="button" variant="outline" disabled title="Missing form id">
+                        Responses
+                      </Button>
+                    )}
+                    {form._id && form._id !== 'undefined' && form._id !== 'null' ? (
+                      <Button asChild type="button" variant="outline">
+                        <Link href={`/admin/evaluation-forms/${form._id}/print`} target="_blank">
+                          Print
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button type="button" variant="outline" disabled title="Missing form id">
                         Print
-                      </Link>
-                    </Button>
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant="ghost"

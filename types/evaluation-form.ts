@@ -15,6 +15,7 @@ export interface EvaluationForm {
   name: string;
   audience: EvaluationAudience;
   description?: string;
+  evaluatorOptions?: string[];
   scale?: EvaluationScaleItem[];
   sections?: EvaluationSection[];
   createdAt: string;
@@ -25,6 +26,7 @@ export interface CreateEvaluationFormDto {
   name: string;
   audience: EvaluationAudience;
   description?: string;
+  evaluatorOptions?: string[];
   scale?: EvaluationScaleItem[];
   sections?: EvaluationSection[];
 }

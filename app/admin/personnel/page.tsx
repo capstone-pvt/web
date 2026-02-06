@@ -42,6 +42,8 @@ export default function PersonnelPage() {
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [selectedPersonnel, setSelectedPersonnel] = useState<Personnel | null>(null);
   const [excellenceFilter, setExcellenceFilter] = useState<string>('all');
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const {
     data: personnel = [],
@@ -143,6 +145,13 @@ export default function PersonnelPage() {
     if (excellenceFilter === 'all') return personnel;
     return personnel.filter((p) => p.excellenceStatus === excellenceFilter);
   }, [personnel, excellenceFilter]);
+
+  const paginatedPersonnel = useMemo(() => {
+    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+    return filteredPersonnel.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredPersonnel, page]);
+
+  const totalPages = Math.ceil(filteredPersonnel.length / ITEMS_PER_PAGE);
 
   const handleCreate = () => {
     setSelectedPersonnel(null);
@@ -247,7 +256,16 @@ export default function PersonnelPage() {
         </DialogContent>
       </Dialog>
 
-      <PersonnelTable personnel={filteredPersonnel} onEdit={handleEdit} onDelete={handleDelete} />
+      <PersonnelTable
+        personnel={paginatedPersonnel}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        pagination={{
+          currentPage: page,
+          totalPages: totalPages,
+          onPageChange: setPage,
+        }}
+      />
 
       <div className="mt-8">
         <ExcellenceAnalytics />

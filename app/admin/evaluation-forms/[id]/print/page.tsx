@@ -2,30 +2,35 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/app/components/ui/button';
 import { getEvaluationForm } from '@/lib/api/evaluation-forms.api';
 import type { EvaluationForm } from '@/types/evaluation-form';
 
-interface PrintPageProps {
-  params: {
-    id: string;
-  };
-}
+export default function EvaluationFormPrintPage() {
+  const params = useParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const hasValidId = Boolean(id) && id !== 'undefined' && id !== 'null';
 
-export default function EvaluationFormPrintPage({ params }: PrintPageProps) {
   const { data: form, isLoading, isError } = useQuery<EvaluationForm>({
-    queryKey: ['evaluation-forms', params.id],
-    queryFn: () => getEvaluationForm(params.id),
+    queryKey: ['evaluation-forms', id],
+    queryFn: () => getEvaluationForm(String(id)),
+    enabled: hasValidId,
   });
 
   useEffect(() => {
+    if (!hasValidId) return undefined;
     const timer = setTimeout(() => window.print(), 300);
     return () => clearTimeout(timer);
-  }, []);
+  }, [hasValidId]);
 
   if (isLoading) {
     return <div className="p-4">Loading...</div>;
+  }
+
+  if (!hasValidId) {
+    return <div className="p-4">Invalid form id.</div>;
   }
 
   if (isError || !form) {
@@ -75,7 +80,7 @@ export default function EvaluationFormPrintPage({ params }: PrintPageProps) {
           </div>
           <div className="grid gap-2 text-xs">
             <div className="flex items-center gap-2">
-              <span className="min-w-[120px] font-semibold">Name of Teacher</span>
+              <span className="min-w-[120px] font-semibold text-black">Name of Teacher</span>
               <span className="flex-1 border-b border-dashed border-gray-400" />
             </div>
             <div className="flex items-center gap-2">
@@ -114,6 +119,22 @@ export default function EvaluationFormPrintPage({ params }: PrintPageProps) {
                   className="px-2 py-1 rounded border text-xs bg-background"
                 >
                   {item.value} = {item.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(form.evaluatorOptions || []).length > 0 && (
+          <div className="text-sm">
+            <p className="font-semibold mb-2">Evaluators</p>
+            <div className="flex flex-wrap gap-2">
+              {(form.evaluatorOptions || []).map((option) => (
+                <span
+                  key={option}
+                  className="px-2 py-1 rounded border text-xs bg-background"
+                >
+                  {option}
                 </span>
               ))}
             </div>
