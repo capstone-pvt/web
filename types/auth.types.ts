@@ -13,6 +13,11 @@ export interface RegisterData {
   lastName: string;
 }
 
+export interface AuthUserDepartment {
+  _id: string;
+  name: string;
+}
+
 export interface AuthUser {
   _id: string;
   email: string;
@@ -21,6 +26,10 @@ export interface AuthUser {
   fullName: string;
   roles: Role[];
   permissions: string[];
+  department?: AuthUserDepartment;
+  studentId?: string;
+  gradeLevel?: string;
+  adviser?: string;
   isActive: boolean;
   lastLoginAt?: string;
 }

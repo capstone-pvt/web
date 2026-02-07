@@ -3,25 +3,26 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from '@/lib/api/axios';
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { PERMISSIONS } from '@/config/permissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Users, Building, Briefcase, FileText, PlusCircle, BarChart2 } from 'lucide-react';
 import Link from 'next/link';
+import UserDashboard from './UserDashboard';
 
 interface DashboardAnalytics {
   stats: {
     totalUsers: number;
     totalPersonnel: number;
     totalDepartments: number;
-    evaluationsThisMonth: number; // Added this missing property
+    evaluationsThisMonth: number;
   };
   personnelByDepartment: { name: string; count: number }[];
 }
 
 const fetchDashboardData = async (): Promise<DashboardAnalytics> => {
   const { data } = await axios.get('/analytics');
-  // We only need a subset of the analytics data for the dashboard
   return {
     stats: data.stats,
     personnelByDepartment: data.personnelByDepartment,
@@ -29,6 +30,21 @@ const fetchDashboardData = async (): Promise<DashboardAnalytics> => {
 };
 
 export default function DashboardPage() {
+  const { user, hasPermission } = useAuth();
+
+  const isAdmin =
+    hasPermission(PERMISSIONS.USERS_READ) ||
+    hasPermission(PERMISSIONS.ROLES_READ) ||
+    hasPermission(PERMISSIONS.SETTINGS_MANAGE);
+
+  if (!isAdmin) {
+    return <UserDashboard />;
+  }
+
+  return <AdminDashboard />;
+}
+
+function AdminDashboard() {
   const { user } = useAuth();
   const { data, isLoading, error } = useQuery<DashboardAnalytics>({
     queryKey: ['dashboardAnalytics'],
@@ -44,7 +60,7 @@ export default function DashboardPage() {
     <div className="container mx-auto p-4 space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Welcome back, {user?.firstName || 'User'}!</h1>
-        <p className="text-muted-foreground">Here's a snapshot of your application.</p>
+        <p className="text-muted-foreground">Here&apos;s a snapshot of your application.</p>
       </div>
 
       {/* Stat Cards */}

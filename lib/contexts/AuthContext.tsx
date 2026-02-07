@@ -102,14 +102,12 @@ export function AuthProvider({ children }: Readonly<{
   });
 
   const login = async (credentials: LoginCredentials) => {
-    setIsLoading(true);
     try {
       await authApi.login(credentials);
       await refreshUser();
       router.push('/dashboard');
     } catch (err) {
       const error = err as Error;
-      setIsLoading(false);
       throw new Error(error.message || 'Login failed');
     }
   };

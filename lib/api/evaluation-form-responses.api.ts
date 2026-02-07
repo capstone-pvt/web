@@ -1,6 +1,7 @@
 import http from './axios';
 import type {
   BulkUploadResult,
+  CreateEvaluationFormResponseDto,
   EvaluationFormResponse,
   EvaluationFormResponseReport,
 } from '@/types/evaluation-form-response';
@@ -79,5 +80,17 @@ export const bulkUploadEvaluationFormResponses = async (
   const response = await http.post(`/evaluation-form-responses/${formId}/bulk-upload`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return response.data;
+};
+
+export const submitEvaluationFormResponse = async (
+  data: CreateEvaluationFormResponseDto,
+): Promise<EvaluationFormResponse> => {
+  const response = await http.post('/evaluation-form-responses/submit', data);
+  return response.data;
+};
+
+export const getMyEvaluationFormResponses = async (): Promise<EvaluationFormResponse[]> => {
+  const response = await http.get('/evaluation-form-responses/my-responses');
   return response.data;
 };

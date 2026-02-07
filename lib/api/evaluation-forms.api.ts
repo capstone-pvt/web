@@ -42,3 +42,16 @@ export const deleteEvaluationForm = async (id: string): Promise<void> => {
   }
   await http.delete(`/evaluation-forms/${id}`);
 };
+
+export const getAvailableEvaluationForms = async (): Promise<EvaluationForm[]> => {
+  const response = await http.get('/evaluation-forms/user/available');
+  return response.data;
+};
+
+export const getAvailableEvaluationForm = async (id: string): Promise<EvaluationForm> => {
+  if (!id || id === 'undefined' || id === 'null') {
+    throw new Error('Evaluation form id is required');
+  }
+  const response = await http.get(`/evaluation-forms/user/available/${id}`);
+  return response.data;
+};

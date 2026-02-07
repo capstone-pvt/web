@@ -10,6 +10,11 @@ export interface EvaluationSection {
   items: string[];
 }
 
+export interface EvaluationFormDepartment {
+  _id: string;
+  name: string;
+}
+
 export interface EvaluationForm {
   _id: string;
   name: string;
@@ -18,6 +23,9 @@ export interface EvaluationForm {
   evaluatorOptions?: string[];
   scale?: EvaluationScaleItem[];
   sections?: EvaluationSection[];
+  departments?: EvaluationFormDepartment[];
+  semester?: string;
+  schoolYear?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +37,9 @@ export interface CreateEvaluationFormDto {
   evaluatorOptions?: string[];
   scale?: EvaluationScaleItem[];
   sections?: EvaluationSection[];
+  departments?: string[];
+  semester?: string;
+  schoolYear?: string;
 }
 
 export interface UpdateEvaluationFormDto

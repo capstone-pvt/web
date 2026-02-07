@@ -53,3 +53,10 @@ export interface EvaluationFormResponseTemplate {
   headers: string[];
   scale?: EvaluationScaleItem[];
 }
+
+export interface CreateEvaluationFormResponseDto {
+  formId: string;
+  semester?: string;
+  evaluator?: string;
+  answers: EvaluationResponseItem[];
+}

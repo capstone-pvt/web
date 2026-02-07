@@ -53,6 +53,8 @@ const emptyForm: CreateEvaluationFormDto = {
   evaluatorOptions: ['Student'],
   scale: defaultScale,
   sections: [],
+  semester: '',
+  schoolYear: '',
 };
 
 const CREATE_FORM_STORAGE_KEY = 'evaluation-forms:create-draft';
@@ -185,6 +187,8 @@ const toDraftForm = (form: CreateEvaluationFormDto): DraftForm => ({
       text: item,
     })),
   })),
+  semester: form.semester,
+  schoolYear: form.schoolYear,
 });
 
 const toDtoForm = (form: DraftForm): CreateEvaluationFormDto => ({
@@ -197,6 +201,8 @@ const toDtoForm = (form: DraftForm): CreateEvaluationFormDto => ({
     title: section.title,
     items: section.items.map((item) => item.text),
   })),
+  semester: form.semester,
+  schoolYear: form.schoolYear,
 });
 
 const hydrateDraftForm = (raw: unknown): DraftForm | null => {
@@ -233,6 +239,8 @@ const hydrateDraftForm = (raw: unknown): DraftForm | null => {
             : [],
         }))
       : base.sections,
+    semester: typeof data.semester === 'string' ? data.semester : base.semester,
+    schoolYear: typeof data.schoolYear === 'string' ? data.schoolYear : base.schoolYear,
   };
 };
 
@@ -514,6 +522,44 @@ export default function EvaluationFormsPage() {
                 </Select>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Semester</Label>
+                  <Select
+                    value={createForm.semester || ''}
+                    onValueChange={(value) =>
+                      setCreateForm((current) => ({
+                        ...current,
+                        semester: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select semester" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1st">1st Semester</SelectItem>
+                      <SelectItem value="2nd">2nd Semester</SelectItem>
+                      <SelectItem value="Summer">Summer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="create-form-school-year">School Year</Label>
+                  <Input
+                    id="create-form-school-year"
+                    value={createForm.schoolYear || ''}
+                    onChange={(event) =>
+                      setCreateForm((current) => ({
+                        ...current,
+                        schoolYear: event.target.value,
+                      }))
+                    }
+                    placeholder="e.g., 2024-2025"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="create-form-description">Description</Label>
                 <Textarea
@@ -712,6 +758,13 @@ export default function EvaluationFormsPage() {
                   <h2 className="text-xl font-semibold">
                     {createForm.name || 'Untitled Evaluation Form'}
                   </h2>
+                  {(createForm.semester || createForm.schoolYear) && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {createForm.semester && `${createForm.semester} Semester`}
+                      {createForm.semester && createForm.schoolYear && ' · '}
+                      {createForm.schoolYear && `SY ${createForm.schoolYear}`}
+                    </p>
+                  )}
                   {createForm.description && (
                     <p className="text-sm text-muted-foreground mt-1">
                       {createForm.description}
@@ -831,6 +884,8 @@ export default function EvaluationFormsPage() {
                         ? 'Teaching personnel'
                         : 'Non-teaching personnel'}{' '}
                       · {form.sections?.length || 0} sections
+                      {form.semester && ` · ${form.semester} Semester`}
+                      {form.schoolYear && ` · SY ${form.schoolYear}`}
                     </p>
                   </div>
                   <div className="flex gap-2">
