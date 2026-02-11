@@ -92,6 +92,7 @@ const toDraftForm = (form: CreateEvaluationFormDto): DraftForm => ({
   })),
   semester: form.semester,
   schoolYear: form.schoolYear,
+  endDate: form.endDate,
 });
 
 const toDtoForm = (form: DraftForm): CreateEvaluationFormDto => ({
@@ -106,6 +107,7 @@ const toDtoForm = (form: DraftForm): CreateEvaluationFormDto => ({
   })),
   semester: form.semester,
   schoolYear: form.schoolYear,
+  endDate: form.endDate,
 });
 
 const addSection = (form: DraftForm): DraftForm => ({
@@ -222,6 +224,7 @@ export default function EvaluationFormEditPage() {
         sections: form.sections || [],
         semester: form.semester || '',
         schoolYear: form.schoolYear || '',
+        endDate: form.endDate ? new Date(form.endDate).toISOString().split('T')[0] : '',
       }),
     );
   }, [form]);
@@ -392,6 +395,22 @@ export default function EvaluationFormEditPage() {
                       placeholder="e.g., 2024-2025"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-form-end-date">End Date</Label>
+                  <Input
+                    id="edit-form-end-date"
+                    type="date"
+                    value={draft.endDate || ''}
+                    onChange={(event) =>
+                      setDraft((current) =>
+                        current
+                          ? { ...current, endDate: event.target.value }
+                          : current,
+                      )
+                    }
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -608,11 +627,13 @@ export default function EvaluationFormEditPage() {
                     <h2 className="text-xl font-semibold">
                       {draft.name || 'Untitled Evaluation Form'}
                     </h2>
-                    {(draft.semester || draft.schoolYear) && (
+                    {(draft.semester || draft.schoolYear || draft.endDate) && (
                       <p className="text-sm text-muted-foreground mt-1">
                         {draft.semester && `${draft.semester} Semester`}
                         {draft.semester && draft.schoolYear && ' · '}
                         {draft.schoolYear && `SY ${draft.schoolYear}`}
+                        {(draft.semester || draft.schoolYear) && draft.endDate && ' · '}
+                        {draft.endDate && `End Date: ${new Date(draft.endDate).toLocaleDateString()}`}
                       </p>
                     )}
                     {draft.description && (

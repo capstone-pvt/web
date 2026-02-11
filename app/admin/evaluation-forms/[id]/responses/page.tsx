@@ -229,6 +229,14 @@ export default function EvaluationFormResponsesPage() {
     return { sumAverage, sumPercentage, totalCount };
   }, [reportSections]);
 
+  const isEvaluationEnded = useMemo(() => {
+    if (!form?.endDate) return false;
+    const endDate = new Date(form.endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return endDate < today;
+  }, [form?.endDate]);
+
   const handleDownloadTemplate = async () => {
     if (!hasValidId) return;
     try {
@@ -288,6 +296,26 @@ export default function EvaluationFormResponsesPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
+      {isEvaluationEnded && (
+        <Card className="border-green-600 bg-green-50 dark:bg-green-950">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold mt-0.5">
+                ✓
+              </div>
+              <div>
+                <h3 className="font-semibold text-green-900 dark:text-green-100">
+                  Evaluation Period Ended
+                </h3>
+                <p className="text-sm text-green-800 dark:text-green-200 mt-1">
+                  {form?.endDate && `The evaluation period ended on ${new Date(form.endDate).toLocaleDateString()}.`} You can now generate comprehensive reports and analyze the results below.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Form Responses</h1>
@@ -549,9 +577,16 @@ export default function EvaluationFormResponsesPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className={isEvaluationEnded ? 'border-green-600' : ''}>
         <CardHeader>
-          <CardTitle>Semester Report</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Semester Report</CardTitle>
+            {isEvaluationEnded && (
+              <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full">
+                Ready for Final Report
+              </span>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-3">
@@ -578,11 +613,20 @@ export default function EvaluationFormResponsesPage() {
             </div>
             <Button
               type="button"
-              variant="outline"
+              variant={isEvaluationEnded ? "default" : "outline"}
               onClick={() => setReportRequest((current) => current + 1)}
             >
               Generate report
             </Button>
+            {report && reportRequest > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => window.print()}
+              >
+                Print report
+              </Button>
+            )}
           </div>
 
           {reportRequest === 0 ? (
@@ -592,7 +636,18 @@ export default function EvaluationFormResponsesPage() {
           ) : isReportLoading ? (
             <p className="text-sm text-muted-foreground">Generating report...</p>
           ) : report ? (
-            <div className="space-y-4">
+            <div className="space-y-4 report-printable">
+              <div className="print-only mb-4">
+                <h2 className="text-2xl font-bold">{form?.name || 'Evaluation Form'}</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Evaluation Report - Generated on {new Date().toLocaleDateString()}
+                </p>
+                {reportSemester && (
+                  <p className="text-sm text-muted-foreground">
+                    Semester: {reportSemester}
+                  </p>
+                )}
+              </div>
               {reportTotals && (
                 <div className="rounded-lg border p-4 bg-muted/20">
                   <p className="text-xs text-muted-foreground">Grand Total Percentage</p>
@@ -790,6 +845,35 @@ export default function EvaluationFormResponsesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <style jsx global>{`
+        .print-only {
+          display: none;
+        }
+
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .report-printable,
+          .report-printable * {
+            visibility: visible;
+          }
+          .report-printable {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            background: white !important;
+          }
+          .print-only {
+            display: block !important;
+          }
+          button {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

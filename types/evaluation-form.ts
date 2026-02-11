@@ -26,6 +26,7 @@ export interface EvaluationForm {
   departments?: EvaluationFormDepartment[];
   semester?: string;
   schoolYear?: string;
+  endDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -40,6 +41,7 @@ export interface CreateEvaluationFormDto {
   departments?: string[];
   semester?: string;
   schoolYear?: string;
+  endDate?: string;
 }
 
 export interface UpdateEvaluationFormDto

@@ -55,6 +55,7 @@ const emptyForm: CreateEvaluationFormDto = {
   sections: [],
   semester: '',
   schoolYear: '',
+  endDate: '',
 };
 
 const CREATE_FORM_STORAGE_KEY = 'evaluation-forms:create-draft';
@@ -189,6 +190,7 @@ const toDraftForm = (form: CreateEvaluationFormDto): DraftForm => ({
   })),
   semester: form.semester,
   schoolYear: form.schoolYear,
+  endDate: form.endDate,
 });
 
 const toDtoForm = (form: DraftForm): CreateEvaluationFormDto => ({
@@ -203,6 +205,7 @@ const toDtoForm = (form: DraftForm): CreateEvaluationFormDto => ({
   })),
   semester: form.semester,
   schoolYear: form.schoolYear,
+  endDate: form.endDate,
 });
 
 const hydrateDraftForm = (raw: unknown): DraftForm | null => {
@@ -241,6 +244,7 @@ const hydrateDraftForm = (raw: unknown): DraftForm | null => {
       : base.sections,
     semester: typeof data.semester === 'string' ? data.semester : base.semester,
     schoolYear: typeof data.schoolYear === 'string' ? data.schoolYear : base.schoolYear,
+    endDate: typeof data.endDate === 'string' ? data.endDate : base.endDate,
   };
 };
 
@@ -561,6 +565,21 @@ export default function EvaluationFormsPage() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="create-form-end-date">End Date</Label>
+                <Input
+                  id="create-form-end-date"
+                  type="date"
+                  value={createForm.endDate || ''}
+                  onChange={(event) =>
+                    setCreateForm((current) => ({
+                      ...current,
+                      endDate: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="create-form-description">Description</Label>
                 <Textarea
                   id="create-form-description"
@@ -758,11 +777,13 @@ export default function EvaluationFormsPage() {
                   <h2 className="text-xl font-semibold">
                     {createForm.name || 'Untitled Evaluation Form'}
                   </h2>
-                  {(createForm.semester || createForm.schoolYear) && (
+                  {(createForm.semester || createForm.schoolYear || createForm.endDate) && (
                     <p className="text-sm text-muted-foreground mt-1">
                       {createForm.semester && `${createForm.semester} Semester`}
                       {createForm.semester && createForm.schoolYear && ' · '}
                       {createForm.schoolYear && `SY ${createForm.schoolYear}`}
+                      {(createForm.semester || createForm.schoolYear) && createForm.endDate && ' · '}
+                      {createForm.endDate && `End Date: ${new Date(createForm.endDate).toLocaleDateString()}`}
                     </p>
                   )}
                   {createForm.description && (
@@ -886,6 +907,7 @@ export default function EvaluationFormsPage() {
                       · {form.sections?.length || 0} sections
                       {form.semester && ` · ${form.semester} Semester`}
                       {form.schoolYear && ` · SY ${form.schoolYear}`}
+                      {form.endDate && ` · End Date: ${new Date(form.endDate).toLocaleDateString()}`}
                     </p>
                   </div>
                   <div className="flex gap-2">
