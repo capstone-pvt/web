@@ -10,6 +10,11 @@ export const getPersonnel = async (): Promise<Personnel[]> => {
   return response.data;
 };
 
+export const getPersonnelByDepartment = async (departmentId: string): Promise<Personnel[]> => {
+  const response = await http.get(`/personnel/by-department/${departmentId}`);
+  return response.data;
+};
+
 export const getPersonnelWithPredictions = async (): Promise<Personnel[]> => {
   const response = await http.get('/personnel'); // Assuming this endpoint returns all personnel data
   return response.data;

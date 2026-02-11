@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import axiosInstance from '@/lib/api/axios';
 import { PERMISSIONS } from '@/config/permissions';
 import PermissionGate from '@/app/components/guards/PermissionGate';
+import { useAlert } from '@/lib/contexts/AlertContext';
+import { usePermission } from '@/lib/hooks/usePermission';
 
 interface Role {
   _id: string;
@@ -35,6 +37,8 @@ export default function EditUserPage() {
   const router = useRouter();
   const params = useParams();
   const userId = params.id as string;
+  const alert = useAlert();
+  const canUpdateUser = usePermission(PERMISSIONS.USERS_UPDATE);
 
   const [roles, setRoles] = useState<Role[]>([]);
   const [user, setUser] = useState<User | null>(null);
@@ -50,12 +54,7 @@ export default function EditUserPage() {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
 
-  useEffect(() => {
-    fetchUserAndRoles();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
-
-  const fetchUserAndRoles = async () => {
+  const fetchUserAndRoles = useCallback(async () => {
     try {
       setFetchLoading(true);
       const [userResponse, rolesResponse] = await Promise.all([
@@ -78,11 +77,18 @@ export default function EditUserPage() {
       setRoles(rolesResponse.data.roles);
     } catch (error) {
       const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
-      setError(axiosError.response?.data?.error?.message || 'Failed to load user data');
+      const message =
+        axiosError.response?.data?.error?.message || 'Failed to load user data';
+      setError(message);
+      alert.showError(message, { title: 'Load Failed' });
     } finally {
       setFetchLoading(false);
     }
-  };
+  }, [userId, alert]);
+
+  useEffect(() => {
+    fetchUserAndRoles();
+  }, [fetchUserAndRoles]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -106,6 +112,10 @@ export default function EditUserPage() {
     setLoading(true);
 
     try {
+      if (!canUpdateUser) {
+        alert.showWarning('You do not have permission to update users.');
+        return;
+      }
       // Prepare update data - only include password if it's been set
       const updateData: UpdateUserData = {
         email: formData.email,
@@ -116,6 +126,16 @@ export default function EditUserPage() {
       };
 
       if (formData.password) {
+        if (formData.password.length < 8) {
+          alert.showWarning('Password must be at least 8 characters long.');
+          return;
+        }
+        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/.test(formData.password)) {
+          alert.showWarning(
+            'Password must include uppercase, lowercase, number, and special character.',
+          );
+          return;
+        }
         updateData.password = formData.password;
       }
 

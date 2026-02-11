@@ -29,6 +29,10 @@ export interface UpdateUserDto {
   password?: string;
   isActive?: boolean;
   roles?: string[];
+  department?: string;
+  studentId?: string;
+  gradeLevel?: string;
+  adviser?: string;
 }
 
 export interface UserFilters {
@@ -98,6 +102,14 @@ export const usersApi = {
     const response = await axiosInstance.put<ApiResponse<{ user: User }>>(`/users/${id}/roles`, {
       roleIds,
     });
+    return response.data as unknown as { user: User };
+  },
+
+  updateMyProfile: async (
+    id: string,
+    data: Pick<UpdateUserDto, 'department' | 'studentId' | 'gradeLevel' | 'adviser'>,
+  ): Promise<{ user: User }> => {
+    const response = await axiosInstance.put<ApiResponse<{ user: User }>>(`/users/${id}`, data);
     return response.data as unknown as { user: User };
   },
 };

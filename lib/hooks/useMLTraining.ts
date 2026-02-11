@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { mlApi } from '@/lib/api/ml.api';
 import { TrainingConfigDto } from '@/types/ml.types';
 import { toast } from 'sonner';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 /**
  * Hook to get training history
@@ -39,6 +40,7 @@ export function useCurrentModel() {
  */
 export function useTrainModel() {
   const queryClient = useQueryClient();
+  const alert = useAlert();
 
   return useMutation({
     mutationFn: (config: TrainingConfigDto) => mlApi.trainModel(config),
@@ -52,7 +54,9 @@ export function useTrainModel() {
       queryClient.invalidateQueries({ queryKey: ['ml-analytics-model-performance'] });
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to train model');
+      alert.showError(error.message || 'Failed to train model', {
+        title: 'Training Failed',
+      });
     },
   });
 }

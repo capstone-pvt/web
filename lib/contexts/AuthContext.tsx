@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import { settingsApi } from '@/lib/api/settings.api';
@@ -19,6 +19,11 @@ export function AuthProvider({ children }: Readonly<{
   const router = useRouter();
   const pathname = usePathname();
   const { showIdleAlert } = useSessionAlert();
+  const pathnameRef = useRef(pathname);
+
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
 
   const refreshUser = useCallback(async () => {
     setIsLoading(true);
@@ -32,13 +37,14 @@ export function AuthProvider({ children }: Readonly<{
     } catch (error) {
       setUser(null);
       // Only redirect if not on a public page
-      if (pathname !== '/login' && pathname !== '/register') {
+      const currentPath = pathnameRef.current;
+      if (currentPath !== '/login' && currentPath !== '/register') {
         router.push('/login');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [router, pathname]);
+  }, [router]);
 
   useEffect(() => {
     refreshUser();
@@ -96,14 +102,12 @@ export function AuthProvider({ children }: Readonly<{
   });
 
   const login = async (credentials: LoginCredentials) => {
-    setIsLoading(true);
     try {
       await authApi.login(credentials);
       await refreshUser();
       router.push('/dashboard');
     } catch (err) {
       const error = err as Error;
-      setIsLoading(false);
       throw new Error(error.message || 'Login failed');
     }
   };

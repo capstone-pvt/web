@@ -25,6 +25,8 @@ import { toast } from 'sonner';
 import { useHeader } from '@/lib/contexts/HeaderContext';
 import { useSystemAdmin } from '@/lib/hooks/useSystemAdmin';
 import { useAdminOrSystemAdmin } from '@/lib/hooks/useAdminOrSystemAdmin';
+import { useAlert } from '@/lib/contexts/AlertContext';
+import { usePermission } from '@/lib/hooks/usePermission';
 
 // Type Definitions
 interface Permission {
@@ -101,6 +103,7 @@ const RoleAccordionItem = ({ role, groupedPermissions, editingPermissions, onPer
   isSystemAdmin: boolean;
 }) => {
   const isModificationDisabled = role.isSystemRole && !isSystemAdmin;
+  const canManageRole = !role.isSystemRole || isSystemAdmin;
 
   return (
     <AccordionItem value={role._id} key={role._id}>
@@ -138,37 +141,44 @@ const RoleAccordionItem = ({ role, groupedPermissions, editingPermissions, onPer
               </p>
             </div>
           )}
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-            Edit Permissions
-          </h4>
-          <div className="space-y-4">
-            {Object.entries(groupedPermissions).map(([category, perms]) => (
-              <PermissionCategory
-                key={category}
-                category={category}
-                perms={perms}
-                roleId={role._id}
-                checkedPermissions={editingPermissions}
-                onPermissionChange={onPermissionChange}
-                disabled={isModificationDisabled}
-              />
-            ))}
-          </div>
+          {canManageRole && (
+            <>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                Edit Permissions
+              </h4>
+              <div className="space-y-4">
+                {Object.entries(groupedPermissions).map(([category, perms]) => (
+                  <PermissionCategory
+                    key={category}
+                    category={category}
+                    perms={perms}
+                    roleId={role._id}
+                    checkedPermissions={editingPermissions}
+                    onPermissionChange={onPermissionChange}
+                    disabled={isModificationDisabled}
+                  />
+                ))}
+              </div>
+            </>
+          )}
           <div className="mt-6 flex justify-between">
-            <PermissionGate permission={PERMISSIONS.ROLES_DELETE}>
-              <Button
-                variant="destructive"
-                onClick={() => onDelete(role._id)}
-                disabled={isModificationDisabled}
-              >
-                Delete Role
-              </Button>
-            </PermissionGate>
-            <PermissionGate permission={PERMISSIONS.ROLES_UPDATE}>
-              <Button onClick={() => onSaveChanges(role._id)} disabled={isModificationDisabled}>
-                Save Changes
-              </Button>
-            </PermissionGate>
+            {canManageRole && (
+              <PermissionGate permission={PERMISSIONS.ROLES_DELETE}>
+                <Button
+                  variant="destructive"
+                  onClick={() => onDelete(role._id)}
+                >
+                  Delete Role
+                </Button>
+              </PermissionGate>
+            )}
+            {canManageRole && (
+              <PermissionGate permission={PERMISSIONS.ROLES_UPDATE}>
+                <Button onClick={() => onSaveChanges(role._id)}>
+                  Save Changes
+                </Button>
+              </PermissionGate>
+            )}
           </div>
         </div>
       </AccordionContent>
@@ -180,6 +190,9 @@ const RoleAccordionItem = ({ role, groupedPermissions, editingPermissions, onPer
 export default function RolesPage() {
   const { setTitle } = useHeader();
   const isSystemAdmin = useSystemAdmin();
+  const alert = useAlert();
+  const canDeleteRole = usePermission(PERMISSIONS.ROLES_DELETE);
+  const canUpdateRole = usePermission(PERMISSIONS.ROLES_UPDATE);
   const [roles, setRoles] = useState<Role[]>([]);
   const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -221,7 +234,9 @@ export default function RolesPage() {
       setAllPermissions(permissionsRes.data.permissions);
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Failed to load roles and permissions');
+      alert.showError('Failed to load roles and permissions.', {
+        title: 'Load Failed',
+      });
     } finally {
       setLoading(false);
     }
@@ -239,9 +254,13 @@ export default function RolesPage() {
   };
 
   const handleSaveChanges = async (roleId: string) => {
+    if (!canUpdateRole) {
+      alert.showWarning('You do not have permission to update roles.');
+      return;
+    }
     const role = roles.find(r => r._id === roleId);
     if (role?.isSystemRole && !isSystemAdmin) {
-      toast.error('Only System Administrators can update system roles.');
+      alert.showWarning('Only System Administrators can update system roles.');
       return;
     }
 
@@ -253,38 +272,44 @@ export default function RolesPage() {
       await fetchData();
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Failed to update role';
-      toast.error(errorMessage);
+      alert.showError(errorMessage, { title: 'Update Failed' });
     }
   };
 
   const handleDelete = async (roleId: string) => {
+    if (!canDeleteRole) {
+      alert.showWarning('You do not have permission to delete roles.');
+      return;
+    }
     const role = roles.find(r => r._id === roleId);
     if (role?.isSystemRole && !isSystemAdmin) {
-      toast.error('Only System Administrators can delete system roles.');
+      alert.showWarning('Only System Administrators can delete system roles.');
       return;
     }
-
-    if (!confirm('Are you sure you want to delete this role? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      await axiosInstance.delete(`/roles/${roleId}`);
-      toast.success('Role deleted successfully');
-      await fetchData();
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to delete role';
-      toast.error(errorMessage);
-    }
+    alert.showConfirm('Are you sure you want to delete this role? This action cannot be undone.', {
+      title: 'Delete Role',
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          await axiosInstance.delete(`/roles/${roleId}`);
+          toast.success('Role deleted successfully');
+          await fetchData();
+        } catch (error: any) {
+          const errorMessage =
+            error.response?.data?.message || 'Failed to delete role';
+          alert.showError(errorMessage, { title: 'Delete Failed' });
+        }
+      },
+    });
   };
 
   const handleCreateRole = async () => {
     if (!createFormData.name || !createFormData.displayName) {
-      toast.error('Name and Display Name are required');
+      alert.showWarning('Name and Display Name are required');
       return;
     }
     if (createFormData.hierarchy < 1) {
-      toast.error('Hierarchy must be at least 1');
+      alert.showWarning('Hierarchy must be at least 1');
       return;
     }
 
@@ -296,7 +321,7 @@ export default function RolesPage() {
       await fetchData();
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Failed to create role';
-      toast.error(errorMessage);
+      alert.showError(errorMessage, { title: 'Create Failed' });
     }
   };
 

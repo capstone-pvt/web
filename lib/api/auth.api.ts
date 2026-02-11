@@ -22,6 +22,10 @@ export interface User {
   isActive: boolean;
   roles: Role[];
   permissions: string[];
+  department?: { _id: string; name: string };
+  studentId?: string;
+  gradeLevel?: string;
+  adviser?: string;
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;

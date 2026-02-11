@@ -64,6 +64,8 @@ export default function PermissionsPage() {
     action: '',
     category: '',
   });
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     setTitle('Permissions Management');
@@ -71,13 +73,18 @@ export default function PermissionsPage() {
 
   useEffect(() => {
     fetchPermissions();
-  }, []);
+  }, [page]);
 
   const fetchPermissions = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get('/permissions');
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
+      });
+      const response = await axiosInstance.get(`/permissions?${params}`);
       setPermissions(response.data.permissions);
+      setTotalPages(response.data.pagination.totalPages);
     } catch (error) {
       console.error('Error fetching permissions:', error);
       alert.showError('Failed to load permissions. Please try again or contact support.', {
@@ -291,7 +298,15 @@ export default function PermissionsPage() {
                 <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
               </div>
             ) : (
-              <DataTable data={permissions} columns={columns} />
+              <DataTable
+                data={permissions}
+                columns={columns}
+                pagination={{
+                  currentPage: page,
+                  totalPages: totalPages,
+                  onPageChange: setPage,
+                }}
+              />
             )}
           </CardContent>
         </Card>

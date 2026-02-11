@@ -18,6 +18,8 @@ import {
   PageHeader,
 } from '@/app/components/ui';
 import { toast } from 'sonner';
+import { useAlert } from '@/lib/contexts/AlertContext';
+import { usePermission } from '@/lib/hooks/usePermission';
 
 interface Role {
   _id: string;
@@ -28,6 +30,8 @@ interface Role {
 
 export default function CreateUserPage() {
   const router = useRouter();
+  const alert = useAlert();
+  const canCreateUser = usePermission(PERMISSIONS.USERS_CREATE);
   const [roles, setRoles] = useState<Role[]>([]);
   const [formData, setFormData] = useState({
     email: '',
@@ -36,7 +40,6 @@ export default function CreateUserPage() {
     lastName: '',
     roles: [] as string[]
   });
-  const [, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -50,6 +53,7 @@ export default function CreateUserPage() {
       setRoles(response.data.roles);
     } catch (error) {
       console.error('Error fetching roles:', error);
+      alert.showError('Failed to load roles.', { title: 'Load Failed' });
     }
   };
 
@@ -71,18 +75,30 @@ export default function CreateUserPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
+      if (!canCreateUser) {
+        alert.showWarning('You do not have permission to create users.');
+        return;
+      }
+      if (formData.password.length < 8) {
+        alert.showWarning('Password must be at least 8 characters long.');
+        return;
+      }
+      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/.test(formData.password)) {
+        alert.showWarning(
+          'Password must include uppercase, lowercase, number, and special character.',
+        );
+        return;
+      }
       await axiosInstance.post('/users', formData);
       toast.success('User created successfully');
       router.push('/admin/users');
     } catch (err) {
       const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
       const errorMessage = axiosError.response?.data?.error?.message || 'Failed to create user';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      alert.showError(errorMessage, { title: 'Create Failed' });
     } finally {
       setLoading(false);
     }

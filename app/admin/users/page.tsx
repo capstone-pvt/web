@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import axiosInstance from '@/lib/api/axios';
 import { PERMISSIONS } from '@/config/permissions';
 import PermissionGate from '@/app/components/guards/PermissionGate';
@@ -24,6 +24,8 @@ import {
 import { PlusIcon, Pencil1Icon, TrashIcon } from '@radix-ui/react-icons';
 import { toast } from 'sonner';
 import { useHeader } from '@/lib/contexts/HeaderContext';
+import { useAlert } from '@/lib/contexts/AlertContext';
+import { usePermission } from '@/lib/hooks/usePermission';
 
 interface User extends Record<string, unknown> {
   _id: string;
@@ -39,9 +41,12 @@ interface User extends Record<string, unknown> {
 
 export default function UsersPage() {
   const { setTitle } = useHeader();
+  const alert = useAlert();
+  const canDeleteUser = usePermission(PERMISSIONS.USERS_DELETE);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -51,17 +56,21 @@ export default function UsersPage() {
   }, [setTitle]);
 
   useEffect(() => {
-    fetchUsers();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search, roleFilter]);
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  const fetchUsers = async () => {
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, roleFilter]);
+
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '10',
-        ...(search && { search }),
+        ...(debouncedSearch && { search: debouncedSearch }),
         ...(roleFilter && { role: roleFilter })
       });
 
@@ -71,22 +80,40 @@ export default function UsersPage() {
       setTotalPages(response.data.pagination.totalPages);
     } catch (error) {
       console.error('Error fetching users:', error);
+      alert.showError('Failed to load users.', { title: 'Load Failed' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, debouncedSearch, roleFilter]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleDelete = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-
-    try {
-      await axiosInstance.delete(`/users/${userId}`);
-      toast.success('User deleted successfully');
-      fetchUsers();
-    } catch (error) {
-      const axiosError = error as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(axiosError.response?.data?.error?.message || 'Failed to delete user');
+    if (!canDeleteUser) {
+      alert.showWarning('You do not have permission to delete users.');
+      return;
     }
+    alert.showConfirm('Are you sure you want to delete this user?', {
+      title: 'Delete User',
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          await axiosInstance.delete(`/users/${userId}`);
+          toast.success('User deleted successfully');
+          fetchUsers();
+        } catch (error) {
+          const axiosError = error as {
+            response?: { data?: { error?: { message?: string } } };
+          };
+          alert.showError(
+            axiosError.response?.data?.error?.message || 'Failed to delete user',
+            { title: 'Delete Failed' },
+          );
+        }
+      },
+    });
   };
 
   const columns = [
@@ -205,29 +232,12 @@ export default function UsersPage() {
               columns={columns}
               loading={loading}
               emptyMessage="No users found"
+              pagination={{
+                currentPage: page,
+                totalPages: totalPages,
+                onPageChange: setPage,
+              }}
             />
-
-            {totalPages > 1 && (
-              <div className="flex justify-between items-center mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>

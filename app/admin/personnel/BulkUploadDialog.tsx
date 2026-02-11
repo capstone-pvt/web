@@ -73,7 +73,7 @@ export function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialogProps) 
       queryClient.invalidateQueries({ queryKey: ['personnel'] });
 
       if (result.skipped > 0) {
-        toast.warning(
+        alert.showWarning(
           `Upload complete! ${result.created} created, ${result.skipped} skipped (duplicates).`,
         );
       } else if (result.created > 0) {
@@ -81,7 +81,9 @@ export function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialogProps) 
       }
 
       if (result.failed > 0) {
-        toast.error(`${result.failed} record(s) failed to upload.`);
+        alert.showError(`${result.failed} record(s) failed to upload.`, {
+          title: 'Upload Failed',
+        });
       }
     },
     onError: (error: any) => {

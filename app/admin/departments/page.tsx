@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getDepartments,
@@ -19,16 +19,29 @@ import {
 import { DepartmentForm } from './DepartmentForm';
 import { DepartmentsTable } from './DepartmentsTable';
 import { toast } from 'sonner';
+import { useAlert } from '@/lib/contexts/AlertContext';
 
 export default function DepartmentsPage() {
   const queryClient = useQueryClient();
+  const alert = useAlert();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
-  const { data: departments = [], isLoading } = useQuery<Department[]>({
+  const {
+    data: departments = [],
+    isLoading,
+    isError,
+  } = useQuery<Department[]>({
     queryKey: ['departments'],
     queryFn: getDepartments,
   });
+  useEffect(() => {
+    if (isError) {
+      alert.showError('Failed to load departments.', { title: 'Load Failed' });
+    }
+  }, [isError]);
 
   const createMutation = useMutation({
     mutationFn: createDepartment,
@@ -38,7 +51,7 @@ export default function DepartmentsPage() {
       setIsDialogOpen(false);
     },
     onError: () => {
-      toast.error('Failed to create department.');
+      alert.showError('Failed to create department.', { title: 'Create Failed' });
     },
   });
 
@@ -52,7 +65,7 @@ export default function DepartmentsPage() {
       setSelectedDepartment(null);
     },
     onError: () => {
-      toast.error('Failed to update department.');
+      alert.showError('Failed to update department.', { title: 'Update Failed' });
     },
   });
 
@@ -63,7 +76,7 @@ export default function DepartmentsPage() {
       toast.success('Department deleted successfully.');
     },
     onError: () => {
-      toast.error('Failed to delete department.');
+      alert.showError('Failed to delete department.', { title: 'Delete Failed' });
     },
   });
 
@@ -78,9 +91,11 @@ export default function DepartmentsPage() {
   };
 
   const handleDelete = (department: Department) => {
-    if (window.confirm(`Are you sure you want to delete ${department.name}?`)) {
-      deleteMutation.mutate(department._id);
-    }
+    alert.showConfirm(`Are you sure you want to delete ${department.name}?`, {
+      title: 'Delete Department',
+      confirmText: 'Delete',
+      onConfirm: () => deleteMutation.mutate(department._id),
+    });
   };
 
   const handleSubmit = (values: CreateDepartmentDto | UpdateDepartmentDto) => {
@@ -90,6 +105,13 @@ export default function DepartmentsPage() {
       createMutation.mutate(values as CreateDepartmentDto);
     }
   };
+
+  const paginatedDepartments = useMemo(() => {
+    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+    return departments.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [departments, page]);
+
+  const totalPages = Math.ceil(departments.length / ITEMS_PER_PAGE);
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -115,7 +137,16 @@ export default function DepartmentsPage() {
         </DialogContent>
       </Dialog>
 
-      <DepartmentsTable departments={departments} onEdit={handleEdit} onDelete={handleDelete} />
+      <DepartmentsTable
+        departments={paginatedDepartments}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        pagination={{
+          currentPage: page,
+          totalPages: totalPages,
+          onPageChange: setPage,
+        }}
+      />
     </div>
   );
 }
