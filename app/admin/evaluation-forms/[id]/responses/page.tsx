@@ -163,14 +163,21 @@ export default function EvaluationFormResponsesPage() {
   const {
     data: report,
     isLoading: isReportLoading,
+    error: reportError,
+    isError: isReportError,
   } = useQuery<EvaluationFormResponseReport>({
     queryKey: ['evaluation-form-responses-report', id, reportSemester, reportRequest],
-    queryFn: () => getEvaluationFormResponsesReport(String(id), reportSemester || undefined),
+    queryFn: () =>
+      getEvaluationFormResponsesReport(
+        String(id),
+        reportSemester && reportSemester.trim() ? reportSemester.trim() : undefined,
+      ),
     enabled: hasValidId && reportRequest > 0,
   });
 
   const reportSections = useMemo(() => {
-    if (!report) return [];
+    const reportItemsList = report?.items;
+    if (!report || !reportItemsList || !Array.isArray(reportItemsList)) return [];
     const sections = new Map<
       string,
       {
@@ -183,7 +190,7 @@ export default function EvaluationFormResponsesPage() {
       }
     >();
 
-    report.items.forEach((item) => {
+    reportItemsList.forEach((item) => {
       const current =
         sections.get(item.section) || {
           name: item.section,
@@ -204,10 +211,14 @@ export default function EvaluationFormResponsesPage() {
     return Array.from(sections.values()).map((section) => {
       const averageScore =
         section.totalCount > 0 ? section.totalScore / section.totalCount : 0;
+      const sumAverage = section.items.length > 0 ? section.sumAverage / section.items.length : 0;
+      const sumPercentage = section.items.length > 0 ? section.sumPercentage / section.items.length : 0;
       return {
         ...section,
         averageScore,
         percentage: averageScore ? (averageScore / 5) * 100 : 0,
+        sumAverage,
+        sumPercentage,
       };
     });
   }, [report]);
@@ -482,7 +493,7 @@ export default function EvaluationFormResponsesPage() {
                           className={page === 1 ? 'pointer-events-none opacity-50' : ''}
                         />
                       </PaginationItem>
-                      
+
                       {page > 2 && (
                         <PaginationItem>
                           <PaginationLink
@@ -635,6 +646,14 @@ export default function EvaluationFormResponsesPage() {
             </p>
           ) : isReportLoading ? (
             <p className="text-sm text-muted-foreground">Generating report...</p>
+          ) : isReportError ? (
+            <p className="text-sm text-destructive">
+              {reportError instanceof Error
+                ? reportError.message
+                : typeof (reportError as { message?: string })?.message === 'string'
+                  ? (reportError as { message: string }).message
+                  : 'Unable to generate report. Please try again.'}
+            </p>
           ) : report ? (
             <div className="space-y-4 report-printable">
               <div className="print-only mb-4">
@@ -664,7 +683,7 @@ export default function EvaluationFormResponsesPage() {
                 {report.overallAverageScore.toFixed(2)} · Overall percentage:{' '}
                 {report.overallPercentage.toFixed(2)}%
               </div>
-              {report.items.length === 0 ? (
+              {!(report?.items && report.items.length > 0) ? (
                 <p className="text-sm text-muted-foreground">
                   No responses found for the selected semester.
                 </p>
