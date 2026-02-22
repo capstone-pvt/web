@@ -62,8 +62,12 @@ export const getEvaluationFormResponsesReport = async (
   if (!formId || formId === 'undefined' || formId === 'null') {
     throw new Error('Evaluation form id is required');
   }
+  const params =
+    semester && String(semester).trim()
+      ? { semester: String(semester).trim() }
+      : {};
   const response = await http.get(`/evaluation-form-responses/${formId}/report`, {
-    params: { semester },
+    params,
   });
   return response.data;
 };

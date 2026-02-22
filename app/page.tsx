@@ -17,14 +17,6 @@ export default function Home() {
           >
             Go to Dashboard
           </Link>
-          <a
-            href="https://nextjs.org/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-8 py-4 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors"
-          >
-            View Documentation
-          </a>
         </div>
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
           <div className="bg-gray-800/50 backdrop-blur p-6 rounded-lg">
