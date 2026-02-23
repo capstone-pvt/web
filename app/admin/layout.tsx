@@ -1,38 +1,51 @@
 'use client';
 
 import { useAuth } from '@/lib/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import Header from '@/app/components/layouts/Header';
 import Sidenav from '@/app/components/layouts/Sidenav';
 import Footer from '@/app/components/layouts/Footer';
 import { PERMISSIONS } from '@/config/permissions';
 
+const SUPER_ADMIN_ROLES = ['Super Admin', 'super'];
+
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isLoading, hasPermission } = useAuth();
+  const { isAuthenticated, isLoading, hasPermission, hasRole } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isHelpGuide = pathname === '/admin/help-guide';
+  const isSuperAdmin = SUPER_ADMIN_ROLES.some((r) => hasRole(r));
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
     }
 
-    // Check if user has at least one admin permission
+    // Check if user has at least one admin permission (or Help Guide for Super Admin only)
     if (!isLoading && isAuthenticated) {
       const hasAdminAccess =
         hasPermission(PERMISSIONS.USERS_READ) ||
+        hasPermission(PERMISSIONS.USERS_CREATE) ||
         hasPermission(PERMISSIONS.ROLES_READ) ||
-        hasPermission(PERMISSIONS.SETTINGS_MANAGE);
+        hasPermission(PERMISSIONS.SETTINGS_MANAGE) ||
+        hasPermission(PERMISSIONS.SETTINGS_VIEW) ||
+        hasPermission(PERMISSIONS.SUBJECTS_READ) ||
+        hasPermission(PERMISSIONS.SUBJECTS_CREATE) ||
+        hasPermission(PERMISSIONS.EVALUATION_FORMS_READ) ||
+        hasPermission(PERMISSIONS.EVALUATION_FORMS_MANAGE) ||
+        hasPermission(PERMISSIONS.ANALYTICS_VIEW) ||
+        (isHelpGuide && isSuperAdmin);
 
       if (!hasAdminAccess) {
         router.push('/dashboard');
       }
     }
-  }, [isAuthenticated, isLoading, hasPermission, router]);
+  }, [isAuthenticated, isLoading, hasPermission, hasRole, isHelpGuide, isSuperAdmin, router]);
 
   if (isLoading) {
     return (

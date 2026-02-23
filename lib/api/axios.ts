@@ -1,5 +1,19 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
+/**
+ * Helper function to remove undefined, null, and empty string values from an object
+ * This prevents axios from sending these values as query parameters
+ */
+export function cleanParams<T extends Record<string, any>>(params: T | undefined): Partial<T> {
+  if (!params) return {};
+  return Object.entries(params).reduce((acc, [key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      acc[key as keyof T] = value;
+    }
+    return acc;
+  }, {} as Partial<T>);
+}
+
 // API Response format from NestJS backend
 export interface ApiResponse<T = unknown> {
   success: boolean;

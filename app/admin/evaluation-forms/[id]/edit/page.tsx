@@ -42,6 +42,7 @@ type DraftItem = {
 
 type DraftSection = {
   id: string;
+  key?: string;
   title: string;
   items: DraftItem[];
 };
@@ -61,8 +62,8 @@ const defaultScale: EvaluationScaleItem[] = [
 
 const evaluatorOptionsMap: Record<CreateEvaluationFormDto['audience'], string[]> =
   {
-    teaching: ['Student'],
-    'non-teaching': ['Administrator/Head', 'Peer', 'Self'],
+    teaching: ['Student', 'Other'],
+    'non-teaching': ['Administrator/Head', 'Peer', 'Self', 'Other'],
   };
 
 const normalizeEvaluatorOptions = (
@@ -84,6 +85,7 @@ const toDraftForm = (form: CreateEvaluationFormDto): DraftForm => ({
   scale: form.scale || defaultScale,
   sections: (form.sections || []).map((section) => ({
     id: createId(),
+    key: section.key,
     title: section.title,
     items: (section.items || []).map((item) => ({
       id: createId(),
@@ -102,6 +104,7 @@ const toDtoForm = (form: DraftForm): CreateEvaluationFormDto => ({
   evaluatorOptions: form.evaluatorOptions,
   scale: form.scale,
   sections: form.sections.map((section) => ({
+    key: section.key,
     title: section.title,
     items: section.items.map((item) => item.text),
   })),
@@ -519,6 +522,11 @@ export default function EvaluationFormEditPage() {
                       {draft.sections.map((section) => (
                         <div key={section.id} className="border rounded-lg p-3 space-y-3">
                           <div className="flex items-center gap-2">
+                            {section.key ? (
+                              <span className="shrink-0 text-sm font-medium text-muted-foreground w-10">
+                                {section.key}
+                              </span>
+                            ) : null}
                             <Input
                               value={section.title}
                               onChange={(event) =>
@@ -677,7 +685,12 @@ export default function EvaluationFormEditPage() {
 
                   {draft.sections.map((section) => (
                     <div key={section.id} className="space-y-2">
-                      <p className="font-semibold">{section.title}</p>
+                      <p className="font-semibold">
+                        {section.key ? (
+                          <span className="text-muted-foreground mr-2">{section.key}</span>
+                        ) : null}
+                        {section.title}
+                      </p>
                       {section.items.length === 0 ? (
                         <p className="text-sm text-muted-foreground">
                           No items added yet.

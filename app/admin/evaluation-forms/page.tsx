@@ -60,6 +60,7 @@ const emptyForm: CreateEvaluationFormDto = {
 
 const CREATE_FORM_STORAGE_KEY = 'evaluation-forms:create-draft';
 
+/** Default teaching sections: PAA, KSM, TS, CM, AL, GO (section key and full name). */
 const teachingTemplate: CreateEvaluationFormDto = {
   name: 'Teaching Performance Evaluation',
   audience: 'teaching',
@@ -69,6 +70,7 @@ const teachingTemplate: CreateEvaluationFormDto = {
   scale: defaultScale,
   sections: [
     {
+      key: 'PAA',
       title: 'Professional Attitude & Appearance',
       items: [
         'Shows marked extraordinary enthusiasm about his/her teaching',
@@ -84,7 +86,8 @@ const teachingTemplate: CreateEvaluationFormDto = {
       ],
     },
     {
-      title: 'Effectiveness of Teaching - Knowledge of Subject Matter',
+      key: 'KSM',
+      title: 'Effectiveness of Teaching (Knowledge of Subject Matter)',
       items: [
         'Prepares lesson well',
         'Has ample understanding/grasp of subject',
@@ -96,6 +99,7 @@ const teachingTemplate: CreateEvaluationFormDto = {
       ],
     },
     {
+      key: 'TS',
       title: 'Teaching Skills',
       items: [
         'Speaks clearly and distinctly',
@@ -110,6 +114,7 @@ const teachingTemplate: CreateEvaluationFormDto = {
       ],
     },
     {
+      key: 'CM',
       title: 'Classroom Management',
       items: [
         "Commands students' respect",
@@ -119,6 +124,7 @@ const teachingTemplate: CreateEvaluationFormDto = {
       ],
     },
     {
+      key: 'AL',
       title: 'Assessment of Learning',
       items: [
         'Assigns assessment that is related to subject/course material',
@@ -130,7 +136,8 @@ const teachingTemplate: CreateEvaluationFormDto = {
       ],
     },
     {
-      title: 'General Observation',
+      key: 'GO',
+      title: 'Goals & Overall Performance',
       items: [
         'Rapport between teachers and students',
         'Class participation',
@@ -143,8 +150,8 @@ const teachingTemplate: CreateEvaluationFormDto = {
 
 const evaluatorOptionsMap: Record<CreateEvaluationFormDto['audience'], string[]> =
   {
-    teaching: ['Student'],
-    'non-teaching': ['Administrator/Head', 'Peer', 'Self'],
+    teaching: ['Student', 'Other'],
+    'non-teaching': ['Administrator/Head', 'Peer', 'Self', 'Other'],
   };
 
 const normalizeEvaluatorOptions = (
@@ -163,6 +170,7 @@ type DraftItem = {
 
 type DraftSection = {
   id: string;
+  key?: string;
   title: string;
   items: DraftItem[];
 };
@@ -182,6 +190,7 @@ const toDraftForm = (form: CreateEvaluationFormDto): DraftForm => ({
   scale: form.scale || defaultScale,
   sections: (form.sections || []).map((section) => ({
     id: createId(),
+    key: section.key,
     title: section.title,
     items: (section.items || []).map((item) => ({
       id: createId(),
@@ -200,6 +209,7 @@ const toDtoForm = (form: DraftForm): CreateEvaluationFormDto => ({
   evaluatorOptions: form.evaluatorOptions,
   scale: form.scale,
   sections: form.sections.map((section) => ({
+    key: section.key,
     title: section.title,
     items: section.items.map((item) => item.text),
   })),
@@ -233,6 +243,7 @@ const hydrateDraftForm = (raw: unknown): DraftForm | null => {
     sections: Array.isArray(data.sections)
       ? data.sections.map((section) => ({
           id: typeof section.id === 'string' ? section.id : createId(),
+          key: typeof section.key === 'string' ? section.key : undefined,
           title: typeof section.title === 'string' ? section.title : '',
           items: Array.isArray(section.items)
             ? section.items.map((item) => ({
@@ -673,6 +684,11 @@ export default function EvaluationFormsPage() {
                     {createForm.sections.map((section) => (
                       <div key={section.id} className="border rounded-lg p-3 space-y-3">
                         <div className="flex items-center gap-2">
+                          {section.key ? (
+                            <span className="shrink-0 text-sm font-medium text-muted-foreground w-10">
+                              {section.key}
+                            </span>
+                          ) : null}
                           <Input
                             value={section.title}
                             onChange={(event) =>

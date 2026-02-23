@@ -49,11 +49,13 @@ import {
   downloadEvaluationFormResponsesTemplate,
   getEvaluationFormResponsesReport,
   getEvaluationFormResponses,
+  getPersonnelSummaryReport,
 } from '@/lib/api/evaluation-form-responses.api';
 import type {
   BulkUploadResult,
   EvaluationFormResponse,
   EvaluationFormResponseReport,
+  PersonnelSummaryReport,
 } from '@/types/evaluation-form-response';
 import type { EvaluationForm } from '@/types/evaluation-form';
 import type { Department } from '@/types/department';
@@ -93,6 +95,8 @@ export default function EvaluationFormResponsesPage() {
   });
   const [reportSemester, setReportSemester] = useState('');
   const [reportRequest, setReportRequest] = useState(0);
+  const [reportType, setReportType] = useState<'items' | 'personnel'>('items');
+  const [expandedPersonnel, setExpandedPersonnel] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -172,7 +176,22 @@ export default function EvaluationFormResponsesPage() {
         String(id),
         reportSemester && reportSemester.trim() ? reportSemester.trim() : undefined,
       ),
-    enabled: hasValidId && reportRequest > 0,
+    enabled: hasValidId && reportRequest > 0 && reportType === 'items',
+  });
+
+  const {
+    data: personnelSummary,
+    isLoading: isPersonnelSummaryLoading,
+    error: personnelSummaryError,
+    isError: isPersonnelSummaryError,
+  } = useQuery<PersonnelSummaryReport>({
+    queryKey: ['personnel-summary-report', id, reportSemester, reportRequest],
+    queryFn: () =>
+      getPersonnelSummaryReport(
+        String(id),
+        reportSemester && reportSemester.trim() ? reportSemester.trim() : undefined,
+      ),
+    enabled: hasValidId && reportRequest > 0 && reportType === 'personnel',
   });
 
   const reportSections = useMemo(() => {
@@ -248,6 +267,18 @@ export default function EvaluationFormResponsesPage() {
     return endDate < today;
   }, [form?.endDate]);
 
+  const togglePersonnelExpand = (name: string) => {
+    setExpandedPersonnel((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(name)) {
+        newSet.delete(name);
+      } else {
+        newSet.add(name);
+      }
+      return newSet;
+    });
+  };
+
   const handleDownloadTemplate = async () => {
     if (!hasValidId) return;
     try {
@@ -311,7 +342,7 @@ export default function EvaluationFormResponsesPage() {
         <Card className="border-green-600 bg-green-50 dark:bg-green-950">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold mt-0.5">
+              <div className="shrink-0 w-5 h-5 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold mt-0.5">
                 ✓
               </div>
               <div>
@@ -591,16 +622,42 @@ export default function EvaluationFormResponsesPage() {
       <Card className={isEvaluationEnded ? 'border-green-600' : ''}>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Semester Report</CardTitle>
+            <CardTitle>
+              {reportType === 'personnel'
+                ? (reportSemester ? 'Personnel Summary - Semester' : 'Personnel Summary - All Semesters')
+                : (reportSemester ? 'Semester Report' : 'Evaluation Report')}
+            </CardTitle>
             {isEvaluationEnded && (
               <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full">
                 Ready for Final Report
               </span>
             )}
           </div>
+          {!reportSemester && reportRequest > 0 && (
+            <p className="text-sm text-muted-foreground mt-2">
+              {reportType === 'personnel'
+                ? 'Viewing personnel summary for all semesters combined'
+                : 'Viewing summary report for all semesters combined'}
+            </p>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Report Type</label>
+              <Select
+                value={reportType}
+                onValueChange={(value: 'items' | 'personnel') => setReportType(value)}
+              >
+                <SelectTrigger className="min-w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="items">By Items</SelectItem>
+                  <SelectItem value="personnel">By Personnel</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Semester</label>
               <Select
@@ -629,7 +686,7 @@ export default function EvaluationFormResponsesPage() {
             >
               Generate report
             </Button>
-            {report && reportRequest > 0 && (
+            {((report && reportType === 'items') || (personnelSummary && reportType === 'personnel')) && reportRequest > 0 && (
               <Button
                 type="button"
                 variant="outline"
@@ -642,24 +699,28 @@ export default function EvaluationFormResponsesPage() {
 
           {reportRequest === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Select a semester and click Generate report.
+              Select report type, semester and click Generate report.
             </p>
-          ) : isReportLoading ? (
+          ) : (isReportLoading || isPersonnelSummaryLoading) ? (
             <p className="text-sm text-muted-foreground">Generating report...</p>
-          ) : isReportError ? (
+          ) : (isReportError || isPersonnelSummaryError) ? (
             <p className="text-sm text-destructive">
-              {reportError instanceof Error
+              {(reportError instanceof Error
                 ? reportError.message
-                : typeof (reportError as { message?: string })?.message === 'string'
-                  ? (reportError as { message: string }).message
-                  : 'Unable to generate report. Please try again.'}
+                : personnelSummaryError instanceof Error
+                  ? personnelSummaryError.message
+                  : typeof (reportError as unknown as { message?: string })?.message === 'string'
+                    ? (reportError as unknown as { message: string }).message
+                    : typeof (personnelSummaryError as unknown as { message?: string })?.message === 'string'
+                      ? (personnelSummaryError as unknown as { message: string }).message
+                      : 'Unable to generate report. Please try again.')}
             </p>
-          ) : report ? (
+          ) : reportType === 'items' && report ? (
             <div className="space-y-4 report-printable">
               <div className="print-only mb-4">
                 <h2 className="text-2xl font-bold">{form?.name || 'Evaluation Form'}</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Evaluation Report - Generated on {new Date().toLocaleDateString()}
+                  {reportSemester ? 'Semester Report' : 'Summary Report (All Semesters)'} - Generated on {new Date().toLocaleDateString()}
                 </p>
                 {reportSemester && (
                   <p className="text-sm text-muted-foreground">
@@ -667,90 +728,268 @@ export default function EvaluationFormResponsesPage() {
                   </p>
                 )}
               </div>
-              {reportTotals && (
-                <div className="rounded-lg border p-4 bg-muted/20">
-                  <p className="text-xs text-muted-foreground">Grand Total Percentage</p>
-                  <p className="text-3xl font-semibold mt-1">
-                    {reportTotals.sumPercentage.toFixed(2)}%
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Sum of all item percentages across sections
-                  </p>
+
+              {/* Summary Statistics Card */}
+              <div className={`rounded-lg border p-6 ${!reportSemester ? 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800' : 'bg-muted/20'}`}>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">
+                      {reportSemester ? 'Semester Responses' : 'Total Responses (All Semesters)'}
+                    </p>
+                    <p className="text-2xl font-bold mt-1">{report.totalResponses}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">Overall Average Score</p>
+                    <p className="text-2xl font-bold mt-1">{report.overallAverageScore.toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">out of 5.00</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">Overall Percentage</p>
+                    <p className="text-2xl font-bold mt-1">{report.overallPercentage.toFixed(2)}%</p>
+                  </div>
+                  {reportTotals && (
+                    <div>
+                      <p className="text-xs text-muted-foreground font-semibold">Grand Total Percentage</p>
+                      <p className="text-2xl font-bold mt-1">{reportTotals.sumPercentage.toFixed(2)}%</p>
+                      <p className="text-xs text-muted-foreground">sum of all items</p>
+                    </div>
+                  )}
                 </div>
-              )}
-              <div className="text-sm text-muted-foreground">
-                Total responses: {report.totalResponses} · Overall average:{' '}
-                {report.overallAverageScore.toFixed(2)} · Overall percentage:{' '}
-                {report.overallPercentage.toFixed(2)}%
               </div>
               {!(report?.items && report.items.length > 0) ? (
                 <p className="text-sm text-muted-foreground">
-                  No responses found for the selected semester.
+                  {reportSemester ? 'No responses found for the selected semester.' : 'No responses found.'}
                 </p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Section</TableHead>
-                      <TableHead>Item</TableHead>
-                      <TableHead>Avg Score</TableHead>
-                      <TableHead>Percentage</TableHead>
-                      <TableHead>Responses</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reportSections.map((section) => (
-                      <>
-                        <TableRow key={`${section.name}-header`}>
-                          <TableCell className="font-semibold" colSpan={5}>
-                            {section.name}
-                          </TableCell>
-                        </TableRow>
-                        {section.items.map((item) => (
-                          <TableRow key={`${item.section}-${item.item}`}>
-                            <TableCell className="whitespace-normal">
-                              {item.section}
+                <>
+                  {!reportSemester && (
+                    <div className="rounded-md bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-3 mb-4">
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Summary Report - All Semesters Combined
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                        This report aggregates data from all semesters. Total of <strong>{report.totalResponses}</strong> responses included.
+                      </p>
+                    </div>
+                  )}
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Section</TableHead>
+                        <TableHead>Item</TableHead>
+                        <TableHead>Avg Score</TableHead>
+                        <TableHead>Percentage</TableHead>
+                        <TableHead>Responses</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {reportSections.map((section) => (
+                        <>
+                          <TableRow key={`${section.name}-header`}>
+                            <TableCell className="font-semibold" colSpan={5}>
+                              {section.name}
                             </TableCell>
-                            <TableCell className="whitespace-normal">
-                              {item.item}
-                            </TableCell>
-                            <TableCell>{item.averageScore.toFixed(2)}</TableCell>
-                            <TableCell>{item.percentage.toFixed(2)}%</TableCell>
-                            <TableCell>{item.respondentCount}</TableCell>
                           </TableRow>
-                        ))}
-                        <TableRow key={`${section.name}-subtotal`}>
-                          <TableCell className="font-semibold">Subtotal</TableCell>
+                          {section.items.map((item) => (
+                            <TableRow key={`${item.section}-${item.item}`}>
+                              <TableCell className="whitespace-normal" />
+                              <TableCell className="whitespace-normal">
+                                {item.item}
+                              </TableCell>
+                              <TableCell>{item.averageScore.toFixed(2)}</TableCell>
+                              <TableCell>{item.percentage.toFixed(2)}%</TableCell>
+                              <TableCell>{item.respondentCount}</TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow key={`${section.name}-subtotal`}>
+                            <TableCell className="font-semibold">Subtotal</TableCell>
+                            <TableCell />
+                            <TableCell className="font-semibold">
+                              {section.sumAverage.toFixed(2)}
+                            </TableCell>
+                            <TableCell className="font-semibold">
+                              {section.sumPercentage.toFixed(2)}%
+                            </TableCell>
+                            <TableCell className="font-semibold">
+                              {section.totalCount}
+                            </TableCell>
+                          </TableRow>
+                        </>
+                      ))}
+                      {reportTotals && (
+                        <TableRow>
+                          <TableCell className="font-semibold">Grand Total</TableCell>
                           <TableCell />
                           <TableCell className="font-semibold">
-                            {section.sumAverage.toFixed(2)}
+                            {reportTotals.sumAverage.toFixed(2)}
                           </TableCell>
                           <TableCell className="font-semibold">
-                            {section.sumPercentage.toFixed(2)}%
+                            {reportTotals.sumPercentage.toFixed(2)}%
                           </TableCell>
                           <TableCell className="font-semibold">
-                            {section.totalCount}
+                            {reportTotals.totalCount}
                           </TableCell>
                         </TableRow>
-                      </>
-                    ))}
-                    {reportTotals && (
+                      )}
+                    </TableBody>
+                  </Table>
+                </>
+              )}
+            </div>
+          ) : reportType === 'personnel' && personnelSummary ? (
+            <div className="space-y-4 report-printable">
+              <div className="print-only mb-4">
+                <h2 className="text-2xl font-bold">{form?.name || 'Evaluation Form'}</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {reportSemester ? 'Personnel Summary - Semester Report' : 'Personnel Summary - All Semesters'} - Generated on {new Date().toLocaleDateString()}
+                </p>
+                {reportSemester && (
+                  <p className="text-sm text-muted-foreground">
+                    Semester: {reportSemester}
+                  </p>
+                )}
+              </div>
+
+              {/* Summary Statistics Card */}
+              <div className={`rounded-lg border p-6 ${!reportSemester ? 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800' : 'bg-muted/20'}`}>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">Evaluated Personnel</p>
+                    <p className="text-2xl font-bold mt-1">{personnelSummary.totalPersonnel}</p>
+                    <p className="text-xs text-muted-foreground">unique personnel/advisers</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">
+                      {reportSemester ? 'Semester Evaluations' : 'Total Evaluations'}
+                    </p>
+                    <p className="text-2xl font-bold mt-1">{personnelSummary.totalResponses}</p>
+                    <p className="text-xs text-muted-foreground">evaluation forms submitted</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">Overall Average Score</p>
+                    <p className="text-2xl font-bold mt-1">{personnelSummary.overallAverageScore.toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">out of 5.00</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-semibold">Overall Percentage</p>
+                    <p className="text-2xl font-bold mt-1">{personnelSummary.overallPercentage.toFixed(2)}%</p>
+                  </div>
+                </div>
+              </div>
+
+              {!(personnelSummary?.personnel && personnelSummary.personnel.length > 0) ? (
+                <p className="text-sm text-muted-foreground">
+                  {reportSemester ? 'No personnel data found for the selected semester.' : 'No personnel data found.'}
+                </p>
+              ) : (
+                <>
+                  {!reportSemester && (
+                    <div className="rounded-md bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-3 mb-4">
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Personnel Summary Report - All Semesters Combined
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                        This report shows evaluation summary for <strong>{personnelSummary.totalPersonnel}</strong> evaluated personnel/advisers across <strong>{personnelSummary.totalResponses}</strong> total evaluations.
+                      </p>
+                    </div>
+                  )}
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell className="font-semibold">Grand Total</TableCell>
-                        <TableCell />
-                        <TableCell className="font-semibold">
-                          {reportTotals.sumAverage.toFixed(2)}
-                        </TableCell>
-                        <TableCell className="font-semibold">
-                          {reportTotals.sumPercentage.toFixed(2)}%
-                        </TableCell>
-                        <TableCell className="font-semibold">
-                          {reportTotals.totalCount}
-                        </TableCell>
+                        <TableHead className="w-10"></TableHead>
+                        <TableHead>Personnel / Adviser</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Evaluations</TableHead>
+                        <TableHead>Evaluators</TableHead>
+                        <TableHead>Total Score</TableHead>
+                        <TableHead>Avg Score</TableHead>
+                        <TableHead>Percentage</TableHead>
+                        {!reportSemester && <TableHead>Semesters</TableHead>}
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {personnelSummary.personnel.map((person, index) => {
+                        const isExpanded = expandedPersonnel.has(person.name);
+                        return (
+                          <>
+                            <TableRow key={`${person.name}-${index}`} className="cursor-pointer hover:bg-muted/50">
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => togglePersonnelExpand(person.name)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  {isExpanded ? '▼' : '▶'}
+                                </Button>
+                              </TableCell>
+                              <TableCell className="whitespace-normal">
+                                <div className="font-medium">{person.name}</div>
+                              </TableCell>
+                              <TableCell>{person.department}</TableCell>
+                              <TableCell>{person.responseCount}</TableCell>
+                              <TableCell className="text-xs">
+                                <div className="max-w-xs truncate" title={person.evaluators}>
+                                  {person.evaluatorCount} evaluator{person.evaluatorCount !== 1 ? 's' : ''}
+                                </div>
+                              </TableCell>
+                              <TableCell>{person.totalScore.toFixed(2)}</TableCell>
+                              <TableCell className="font-semibold">{person.averageScore.toFixed(2)}</TableCell>
+                              <TableCell className="font-semibold">{person.percentage.toFixed(2)}%</TableCell>
+                              {!reportSemester && (
+                                <TableCell className="whitespace-normal text-xs">
+                                  {person.semesters}
+                                </TableCell>
+                              )}
+                            </TableRow>
+                            {isExpanded && person.sections && person.sections.length > 0 && (
+                              <TableRow key={`${person.name}-${index}-details`}>
+                                <TableCell colSpan={!reportSemester ? 9 : 8} className="bg-muted/20 p-0">
+                                  <div className="p-4">
+                                    <h4 className="font-semibold text-sm mb-3">Score Breakdown by Section & Item</h4>
+                                    {person.sections.map((section) => (
+                                      <div key={section.section} className="mb-4">
+                                        <div className="flex items-center justify-between bg-muted/50 px-3 py-2 rounded-t-md">
+                                          <h5 className="font-semibold text-sm">{section.section}</h5>
+                                          <div className="flex gap-4 text-xs">
+                                            <span>Avg: <strong>{section.averageScore.toFixed(2)}</strong></span>
+                                            <span>Percentage: <strong>{section.percentage.toFixed(2)}%</strong></span>
+                                          </div>
+                                        </div>
+                                        <div className="border rounded-b-md">
+                                          <Table>
+                                            <TableHeader>
+                                              <TableRow>
+                                                <TableHead className="h-8">Item</TableHead>
+                                                <TableHead className="h-8">Avg Score</TableHead>
+                                                <TableHead className="h-8">Percentage</TableHead>
+                                                <TableHead className="h-8">Count</TableHead>
+                                              </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                              {section.items.map((item) => (
+                                                <TableRow key={item.item}>
+                                                  <TableCell className="text-sm">{item.item}</TableCell>
+                                                  <TableCell className="text-sm">{item.averageScore.toFixed(2)}</TableCell>
+                                                  <TableCell className="text-sm">{item.percentage.toFixed(2)}%</TableCell>
+                                                  <TableCell className="text-sm">{item.count}</TableCell>
+                                                </TableRow>
+                                              ))}
+                                            </TableBody>
+                                          </Table>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </>
               )}
             </div>
           ) : (
@@ -864,7 +1103,6 @@ export default function EvaluationFormResponsesPage() {
           )}
         </DialogContent>
       </Dialog>
-
       <style jsx global>{`
         .print-only {
           display: none;
@@ -893,6 +1131,7 @@ export default function EvaluationFormResponsesPage() {
           }
         }
       `}</style>
+
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import axiosInstance, { ApiResponse } from './axios';
+import axiosInstance, { ApiResponse, cleanParams } from './axios';
 
 export interface AuditLog {
   _id: string;
@@ -45,7 +45,7 @@ export const auditLogsApi = {
    */
   getAll: async (filters?: AuditLogFilters): Promise<PaginatedAuditLogs> => {
     const response = await axiosInstance.get<ApiResponse<PaginatedAuditLogs>>('/audit-logs', {
-      params: filters,
+      params: cleanParams(filters),
     });
     return response.data as unknown as PaginatedAuditLogs;
   },
@@ -57,7 +57,7 @@ export const auditLogsApi = {
     const response = await axiosInstance.get<ApiResponse<{ statistics: AuditLogStatistics }>>(
       '/audit-logs/statistics',
       {
-        params: { startDate, endDate },
+        params: cleanParams({ startDate, endDate }),
       }
     );
     return response.data as unknown as { statistics: AuditLogStatistics };

@@ -44,13 +44,17 @@ export default function TrainingPage() {
   };
 
   const handleSubmit = () => {
-    if (!file) {
-      alert.showWarning('Please select a file to upload.');
-      return;
-    }
-
     const formData = new FormData();
-    formData.append('file', file);
+    if (file) {
+      formData.append('file', file);
+    }
+    // If no file, backend will use default employee_history_sample.csv
+    trainMutation.mutate(formData);
+  };
+
+  const handleTrainWithDefault = () => {
+    const formData = new FormData();
+    // Don't append file, backend will use default
     trainMutation.mutate(formData);
   };
 
@@ -124,6 +128,16 @@ export default function TrainingPage() {
         </CardContent>
       </Card>
 
+      {/* Default Training File Notice */}
+      <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
+        <Info className="h-4 w-4 text-green-600" />
+        <AlertTitle className="text-green-800 dark:text-green-400">Default Training File Available</AlertTitle>
+        <AlertDescription className="text-green-700 dark:text-green-300">
+          <p>A default training dataset (<code className="bg-green-100 dark:bg-green-900 px-1 py-0.5 rounded">employee_history_sample.csv</code>) is available for quick model training.</p>
+          <p className="mt-2">You can either use the default file or upload your own custom dataset.</p>
+        </AlertDescription>
+      </Alert>
+
       {/* Training Requirements Alert */}
       <Alert>
         <Info className="h-4 w-4" />
@@ -171,14 +185,24 @@ export default function TrainingPage() {
 
           <Separator />
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div className="text-sm text-muted-foreground">
               {trainMutation.isPending ? 'Training in progress...' : 'Ready to train'}
             </div>
-            <Button onClick={handleSubmit} disabled={trainMutation.isPending || !file}>
-              <Upload className="mr-2 h-4 w-4" />
-              {trainMutation.isPending ? 'Training...' : 'Train Model'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleTrainWithDefault}
+                disabled={trainMutation.isPending}
+                variant="outline"
+              >
+                <Brain className="mr-2 h-4 w-4" />
+                {trainMutation.isPending ? 'Training...' : 'Use Default Dataset'}
+              </Button>
+              <Button onClick={handleSubmit} disabled={trainMutation.isPending || !file}>
+                <Upload className="mr-2 h-4 w-4" />
+                {trainMutation.isPending ? 'Training...' : 'Train with Custom File'}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

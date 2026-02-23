@@ -1,4 +1,4 @@
-import axiosInstance, { ApiResponse } from './axios';
+import axiosInstance, { ApiResponse, cleanParams } from './axios';
 import {
   MLPrediction,
   MLTrainingData,
@@ -28,7 +28,7 @@ export const mlApi = {
     };
   }> => {
     const response = await axiosInstance.get<ApiResponse>('/ml/predictions', {
-      params: filters,
+      params: cleanParams(filters),
     });
     return response.data as any;
   },

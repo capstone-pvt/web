@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import axios from '@/lib/api/axios';
 import { AxiosError, isAxiosError } from 'axios';
 import { useQuery } from '@tanstack/react-query';
-import { getPersonnel } from '@/lib/api/personnel.api';
+import { getPersonnel, getPersonnelById } from '@/lib/api/personnel.api';
 import { Personnel } from '@/types/personnel';
 import { Combobox } from '@/app/components/ui/ComboBox';
 import { Button } from '@/app/components/ui/button';
@@ -47,6 +47,43 @@ export default function ManualPredictPerformancePage() {
   });
 
   const isInterventionNeeded = failedMetrics.length > 0;
+
+  // Auto-populate metrics when personnel is selected
+  useEffect(() => {
+    const loadPersonnelMetrics = async () => {
+      if (personnelId) {
+        try {
+          const personnel = await getPersonnelById(personnelId);
+
+          // Check if personnel has synced metrics
+          if (personnel.personnelType === 'Teaching' && personnel.avgPAA !== undefined) {
+            // Auto-populate with synced averages
+            setMetrics({
+              PAA: personnel.avgPAA?.toString() || '',
+              KSM: personnel.avgKSM?.toString() || '',
+              TS: personnel.avgTS?.toString() || '',
+              CM: personnel.avgCM?.toString() || '',
+              AL: personnel.avgAL?.toString() || '',
+              GO: personnel.avgGO?.toString() || '',
+            });
+
+            if (personnel.lastMetricSync) {
+              toast.success('Metrics auto-populated from synced averages');
+            }
+          } else {
+            // Clear metrics if no synced data or non-teaching personnel
+            setMetrics({
+              PAA: '', KSM: '', TS: '', CM: '', AL: '', GO: '',
+            });
+          }
+        } catch (error) {
+          console.error('Error loading personnel metrics:', error);
+        }
+      }
+    };
+
+    loadPersonnelMetrics();
+  }, [personnelId]);
 
   // Check for existing prediction when personnel or semester changes
   useEffect(() => {
@@ -144,9 +181,14 @@ export default function ManualPredictPerformancePage() {
     }
   };
 
-  const personnelOptions = personnelList.map(p => ({
+  // Filter to only show Teaching and Non-Teaching personnel
+  const filteredPersonnelList = personnelList.filter(
+    p => p.personnelType === 'Teaching' || p.personnelType === 'Non-Teaching'
+  );
+
+  const personnelOptions = filteredPersonnelList.map(p => ({
     value: p._id,
-    label: `${p.firstName} ${p.lastName}`,
+    label: `${p.firstName} ${p.lastName} (${p.personnelType})`,
   }));
 
   return (

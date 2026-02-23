@@ -36,6 +36,42 @@ export interface EvaluationFormResponseReport {
   items: EvaluationFormResponseReportItem[];
 }
 
+export interface PersonnelSectionItem {
+  item: string;
+  averageScore: number;
+  percentage: number;
+  count: number;
+}
+
+export interface PersonnelSection {
+  section: string;
+  items: PersonnelSectionItem[];
+  averageScore: number;
+  percentage: number;
+}
+
+export interface PersonnelSummaryItem {
+  name: string;
+  department: string;
+  responseCount: number;
+  totalScore: number;
+  averageScore: number;
+  percentage: number;
+  semesters: string;
+  evaluators: string;
+  evaluatorCount: number;
+  sections: PersonnelSection[];
+}
+
+export interface PersonnelSummaryReport {
+  semester: string | null;
+  totalPersonnel: number;
+  totalResponses: number;
+  overallAverageScore: number;
+  overallPercentage: number;
+  personnel: PersonnelSummaryItem[];
+}
+
 export interface BulkUploadError {
   row: number;
   message: string;
