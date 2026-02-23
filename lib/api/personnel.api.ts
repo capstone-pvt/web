@@ -10,6 +10,11 @@ export const getPersonnel = async (): Promise<Personnel[]> => {
   return response.data;
 };
 
+export const getPersonnelById = async (id: string): Promise<Personnel> => {
+  const response = await http.get(`/personnel/${id}`);
+  return response.data;
+};
+
 export const getPersonnelByDepartment = async (departmentId: string): Promise<Personnel[]> => {
   const response = await http.get(`/personnel/by-department/${departmentId}`);
   return response.data;
@@ -67,5 +72,19 @@ export const getExcellenceAnalytics = async (params: {
   endYear: number;
 }): Promise<any> => {
   const response = await http.post('/personnel/excellence/analytics', params);
+  return response.data;
+};
+
+export const syncPersonnelMetrics = async (id: string): Promise<Personnel> => {
+  const response = await http.post(`/personnel/${id}/sync-metrics`);
+  return response.data;
+};
+
+export const syncAllMetrics = async (): Promise<{
+  total: number;
+  synced: number;
+  failed: number;
+}> => {
+  const response = await http.post('/personnel/sync-all-metrics');
   return response.data;
 };

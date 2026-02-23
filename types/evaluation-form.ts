@@ -6,6 +6,8 @@ export interface EvaluationScaleItem {
 }
 
 export interface EvaluationSection {
+  /** Short code for the section (e.g. PAA, KSM, TS, CM, AL, GO). */
+  key?: string;
   title: string;
   items: string[];
 }

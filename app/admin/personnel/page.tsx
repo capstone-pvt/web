@@ -9,6 +9,7 @@ import {
   deletePersonnel,
   classifyAllPersonnel,
   calculateExcellenceForAll,
+  syncAllMetrics,
 } from '@/lib/api/personnel.api';
 import { getDepartments } from '@/lib/api/departments.api';
 import { Personnel, CreatePersonnelDto, UpdatePersonnelDto } from '@/types/personnel';
@@ -32,7 +33,7 @@ import { PersonnelTable } from './PersonnelTable';
 import { BulkUploadDialog } from './BulkUploadDialog';
 import { ExcellenceAnalytics } from './ExcellenceAnalytics';
 import { toast } from 'sonner';
-import { Upload, UserCheck, Award } from 'lucide-react';
+import { Upload, UserCheck, Award, RefreshCw } from 'lucide-react';
 import { useAlert } from '@/lib/contexts/AlertContext';
 
 export default function PersonnelPage() {
@@ -141,6 +142,21 @@ export default function PersonnelPage() {
     },
   });
 
+  const syncMetricsMutation = useMutation({
+    mutationFn: syncAllMetrics,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['personnel'] });
+      toast.success(
+        `Metrics synced! ${data.synced} personnel updated, ${data.failed} failed.`
+      );
+    },
+    onError: () => {
+      alert.showError('Failed to sync metrics.', {
+        title: 'Sync Failed',
+      });
+    },
+  });
+
   const filteredPersonnel = useMemo(() => {
     if (excellenceFilter === 'all') return personnel;
     return personnel.filter((p) => p.excellenceStatus === excellenceFilter);
@@ -191,6 +207,14 @@ export default function PersonnelPage() {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Personnel</h1>
         <div className="flex gap-2">
+          <Button
+            onClick={() => syncMetricsMutation.mutate()}
+            variant="outline"
+            disabled={syncMetricsMutation.isPending}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {syncMetricsMutation.isPending ? 'Syncing...' : 'Sync Metrics'}
+          </Button>
           <Button
             onClick={() => excellenceMutation.mutate({ startYear: 2020, endYear: 2025, threshold: 4.0 })}
             variant="outline"

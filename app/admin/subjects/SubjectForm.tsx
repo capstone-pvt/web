@@ -24,6 +24,9 @@ import { Subject } from '@/types/subject';
 import { Department } from '@/types/department';
 import { Personnel } from '@/types/personnel';
 
+/** Sentinel for "None" in Select; Radix Select does not allow value="". */
+const NONE_VALUE = '__none__';
+
 const formSchema = z.object({
   code: z.string().min(2, 'Code must be at least 2 characters.'),
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -161,14 +164,17 @@ export function SubjectForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Teacher (Optional)</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || ''}>
+              <Select
+                onValueChange={(v) => field.onChange(v === NONE_VALUE ? '' : v)}
+                value={field.value || NONE_VALUE}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select teacher" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value={NONE_VALUE}>None</SelectItem>
                   {personnel
                     .filter((p) => p.isActive)
                     .map((person) => (
@@ -204,14 +210,17 @@ export function SubjectForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Semester (Optional)</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''}>
+                <Select
+                  onValueChange={(v) => field.onChange(v === NONE_VALUE ? '' : v)}
+                  value={field.value || NONE_VALUE}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select semester" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value={NONE_VALUE}>None</SelectItem>
                     <SelectItem value="1st">1st Semester</SelectItem>
                     <SelectItem value="2nd">2nd Semester</SelectItem>
                   </SelectContent>

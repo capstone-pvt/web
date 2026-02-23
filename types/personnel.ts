@@ -21,6 +21,21 @@ export interface Personnel {
   lastExcellenceCalculation?: string;
   sixYearAverage?: number;
   totalSemestersEvaluated?: number;
+  // Synced metric averages (Teaching personnel)
+  avgPAA?: number;
+  avgKSM?: number;
+  avgTS?: number;
+  avgCM?: number;
+  avgAL?: number;
+  avgGO?: number;
+  // Synced metric averages (Non-Teaching personnel)
+  avgJK?: number;
+  avgWQ?: number;
+  avgPR?: number;
+  avgTW?: number;
+  avgRL?: number;
+  avgIN?: number;
+  lastMetricSync?: string;
   createdAt: string;
   updatedAt: string;
 }
