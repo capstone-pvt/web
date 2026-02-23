@@ -25,8 +25,15 @@ export default function AdminLayout({
     if (!isLoading && isAuthenticated) {
       const hasAdminAccess =
         hasPermission(PERMISSIONS.USERS_READ) ||
+        hasPermission(PERMISSIONS.USERS_CREATE) ||
         hasPermission(PERMISSIONS.ROLES_READ) ||
-        hasPermission(PERMISSIONS.SETTINGS_MANAGE);
+        hasPermission(PERMISSIONS.SETTINGS_MANAGE) ||
+        hasPermission(PERMISSIONS.SETTINGS_VIEW) ||
+        hasPermission(PERMISSIONS.SUBJECTS_READ) ||
+        hasPermission(PERMISSIONS.SUBJECTS_CREATE) ||
+        hasPermission(PERMISSIONS.EVALUATION_FORMS_READ) ||
+        hasPermission(PERMISSIONS.EVALUATION_FORMS_MANAGE) ||
+        hasPermission(PERMISSIONS.ANALYTICS_VIEW);
 
       if (!hasAdminAccess) {
         router.push('/dashboard');

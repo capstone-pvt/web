@@ -18,7 +18,7 @@ export function AuthProvider({ children }: Readonly<{
   const [sessionTimeout, setSessionTimeout] = useState<number>(5); // Default 5 minutes
   const router = useRouter();
   const pathname = usePathname();
-  const { showIdleAlert } = useSessionAlert();
+  const { showIdleAlert, showInactivityWarning, hideInactivityWarning } = useSessionAlert();
   const pathnameRef = useRef(pathname);
 
   useEffect(() => {
@@ -81,25 +81,62 @@ export function AuthProvider({ children }: Readonly<{
     }
   }, [router]);
 
-  // Handle idle timeout
+  // Extend session function
+  const extendSessionRef = useRef<() => void>(() => {});
+
+  // Handle inactivity warning (1 minute before logout)
+  const handleWarning = useCallback(() => {
+    if (user) {
+      console.log('Showing inactivity warning...');
+      showInactivityWarning(
+        () => {
+          // On extend session - call the extendSession function
+          console.log('Session extended');
+          extendSessionRef.current();
+        },
+        () => {
+          // On logout
+          console.log('User did not extend session. Logging out...');
+          logout(true);
+        },
+        60 // 60 seconds countdown
+      );
+    }
+  }, [user, showInactivityWarning, logout]);
+
+  // Handle idle timeout (actual logout)
   const handleIdle = useCallback(() => {
     if (user) {
       console.log('User has been idle for too long. Logging out...');
+      hideInactivityWarning();
       showIdleAlert(() => {
         logout(true);
       });
     }
-  }, [user, logout, showIdleAlert]);
+  }, [user, logout, showIdleAlert, hideInactivityWarning]);
 
   // Enable idle timeout only when user is authenticated and not on public pages
   const isPublicPage = pathname === '/login' || pathname === '/register';
   const shouldEnableIdleTimeout = !!user && !isPublicPage;
 
-  useIdleTimeout({
+  const { resetTimer } = useIdleTimeout({
     onIdle: handleIdle,
+    onWarning: handleWarning,
     idleTime: sessionTimeout * 60 * 1000, // Convert minutes to milliseconds
+    warningTime: 60 * 1000, // Show warning 1 minute (60 seconds) before logout
     enabled: shouldEnableIdleTimeout,
   });
+
+  // Extend session function
+  const extendSession = useCallback(() => {
+    resetTimer();
+    hideInactivityWarning();
+  }, [resetTimer, hideInactivityWarning]);
+
+  // Update the ref
+  useEffect(() => {
+    extendSessionRef.current = extendSession;
+  }, [extendSession]);
 
   const login = async (credentials: LoginCredentials) => {
     try {
@@ -151,7 +188,8 @@ export function AuthProvider({ children }: Readonly<{
     hasPermission,
     hasRole,
     hasAnyPermission,
-    hasAllPermissions
+    hasAllPermissions,
+    extendSession
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

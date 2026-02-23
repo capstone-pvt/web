@@ -2,7 +2,9 @@ import { useEffect, useRef, useCallback } from 'react';
 
 interface UseIdleTimeoutOptions {
   onIdle: () => void;
+  onWarning?: () => void; // Called when warning time is reached
   idleTime: number; // in milliseconds
+  warningTime?: number; // in milliseconds before idle (e.g., 60000 for 1 minute)
   enabled?: boolean;
 }
 
@@ -10,32 +12,48 @@ interface UseIdleTimeoutOptions {
  * Hook to track user idle time and trigger a callback when idle
  * Tracks mouse movements, clicks, keyboard events, touch events, and scroll events
  */
-export function useIdleTimeout({ onIdle, idleTime, enabled = true }: UseIdleTimeoutOptions) {
+export function useIdleTimeout({ onIdle, onWarning, idleTime, warningTime, enabled = true }: UseIdleTimeoutOptions) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
 
   const resetTimer = useCallback(() => {
     lastActivityRef.current = Date.now();
 
-    // Clear existing timeout
+    // Clear existing timeouts
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
+    if (warningTimeoutRef.current) {
+      clearTimeout(warningTimeoutRef.current);
+    }
 
-    // Set new timeout only if enabled
+    // Set new timeouts only if enabled
     if (enabled) {
+      // Set warning timeout if warningTime is provided
+      if (warningTime && onWarning && warningTime < idleTime) {
+        warningTimeoutRef.current = setTimeout(() => {
+          onWarning();
+        }, idleTime - warningTime);
+      }
+
+      // Set idle timeout
       timeoutRef.current = setTimeout(() => {
         onIdle();
       }, idleTime);
     }
-  }, [onIdle, idleTime, enabled]);
+  }, [onIdle, onWarning, idleTime, warningTime, enabled]);
 
   useEffect(() => {
     if (!enabled) {
-      // Clear timeout if disabled
+      // Clear timeouts if disabled
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
+      }
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
+        warningTimeoutRef.current = null;
       }
       return;
     }
@@ -72,6 +90,9 @@ export function useIdleTimeout({ onIdle, idleTime, enabled = true }: UseIdleTime
 
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+      }
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
       }
     };
   }, [resetTimer, enabled]);

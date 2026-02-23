@@ -82,7 +82,7 @@ const PermissionCategory = ({ category, perms, roleId, checkedPermissions, onPer
           />
           <label
             htmlFor={`perm-${roleId}-${perm._id}`}
-            className={`text-sm font-medium ${disabled ? 'text-gray-400' : 'text-gray-800 dark:text-gray-200 cursor-pointer'}`}
+            className={`text-sm font-medium ${disabled ? 'text-gray-900' : 'text-gray-800 dark:text-gray-900 cursor-pointer'}`}
           >
             {perm.displayName}
           </label>

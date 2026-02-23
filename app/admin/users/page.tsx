@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { useHeader } from '@/lib/contexts/HeaderContext';
 import { useAlert } from '@/lib/contexts/AlertContext';
 import { usePermission } from '@/lib/hooks/usePermission';
+import { rolesApi, type Role } from '@/lib/api/roles.api';
 
 interface User extends Record<string, unknown> {
   _id: string;
@@ -44,6 +45,7 @@ export default function UsersPage() {
   const alert = useAlert();
   const canDeleteUser = usePermission(PERMISSIONS.USERS_DELETE);
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -54,6 +56,18 @@ export default function UsersPage() {
   useEffect(() => {
     setTitle('User Management');
   }, [setTitle]);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await rolesApi.getAll();
+        setRoles(response.roles);
+      } catch (error) {
+        console.error('Error fetching roles:', error);
+      }
+    };
+    fetchRoles();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
@@ -214,14 +228,17 @@ export default function UsersPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="flex-1"
               />
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <Select value={roleFilter || 'all'} onValueChange={(value) => setRoleFilter(value === 'all' ? '' : value)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="All Roles" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem key={role._id} value={role.name}>
+                      {role.displayName}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

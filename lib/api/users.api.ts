@@ -1,4 +1,4 @@
-import axiosInstance, { ApiResponse } from './axios';
+import axiosInstance, { ApiResponse, cleanParams } from './axios';
 import { Role } from './roles.api';
 
 export interface User {
@@ -12,6 +12,10 @@ export interface User {
   updatedAt: string;
   lastLoginAt?: string;
   lastLoginIp?: string;
+  department?: string | { _id: string; name: string };
+  studentId?: string;
+  gradeLevel?: string;
+  adviser?: string;
 }
 
 export interface CreateUserDto {
@@ -59,7 +63,7 @@ export const usersApi = {
    */
   getAll: async (filters?: UserFilters): Promise<PaginatedUsers> => {
     const response = await axiosInstance.get<ApiResponse<PaginatedUsers>>('/users', {
-      params: filters,
+      params: cleanParams(filters),
     });
     return response.data as unknown as PaginatedUsers;
   },

@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getAvailableEvaluationForm } from '@/lib/api/evaluation-forms.api';
 import { submitEvaluationFormResponse } from '@/lib/api/evaluation-form-responses.api';
+import { subjectsApi } from '@/lib/api/subjects.api';
+import { useAuth } from '@/lib/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
@@ -12,13 +14,17 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import type { EvaluationResponseItem } from '@/types/evaluation-form-response';
+import type { Subject } from '@/types/subject';
+import type { Personnel } from '@/types/personnel';
 
 export default function FillEvaluationFormPage() {
   const params = useParams();
   const router = useRouter();
   const formId = params.id as string;
+  const { user } = useAuth();
 
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [evaluator, setEvaluator] = useState('');
 
   const { data: form, isLoading, error } = useQuery({
@@ -26,6 +32,34 @@ export default function FillEvaluationFormPage() {
     queryFn: () => getAvailableEvaluationForm(formId),
     enabled: !!formId,
   });
+
+  // Fetch subjects for the student's department and grade level
+  const { data: subjects = [] } = useQuery<Subject[]>({
+    queryKey: ['subjects', user?.department, user?.gradeLevel],
+    queryFn: () => {
+      const departmentId = typeof user?.department === 'object'
+        ? (user.department as any)._id
+        : user?.department;
+      return subjectsApi.getByDepartmentAndGrade(departmentId || '', user?.gradeLevel);
+    },
+    enabled: !!user?.department,
+  });
+
+  // Update evaluator when subject is selected
+  useEffect(() => {
+    if (selectedSubject) {
+      const subject = subjects.find((s) => s._id === selectedSubject);
+      if (subject && subject.teacher) {
+        const teacher = subject.teacher as Personnel;
+        const teacherName = `${teacher.firstName} ${teacher.lastName}`;
+        setEvaluator(teacherName);
+      } else {
+        setEvaluator('');
+      }
+    } else {
+      setEvaluator('');
+    }
+  }, [selectedSubject, subjects]);
 
   const submitMutation = useMutation({
     mutationFn: submitEvaluationFormResponse,
@@ -45,6 +79,18 @@ export default function FillEvaluationFormPage() {
 
   const handleSubmit = () => {
     if (!form) return;
+
+    // Check if subject is selected
+    if (!selectedSubject) {
+      toast.error('Please select a subject to evaluate.');
+      return;
+    }
+
+    // Check if teacher is assigned to subject
+    if (!evaluator) {
+      toast.error('No teacher assigned to this subject. Please select another subject.');
+      return;
+    }
 
     const allItems: { section: string; item: string }[] = [];
     form.sections?.forEach((section) => {
@@ -157,30 +203,30 @@ export default function FillEvaluationFormPage() {
                 </p>
               </div>
             )}
-            {form.evaluatorOptions && form.evaluatorOptions.length > 0 ? (
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">
+                Subject <span className="text-destructive">*</span>
+              </label>
+              <select
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                required
+              >
+                <option value="">Select a subject</option>
+                {subjects.map((subject) => (
+                  <option key={subject._id} value={subject._id}>
+                    {subject.code} - {subject.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {selectedSubject && evaluator && (
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Evaluator Type (optional)</label>
-                <select
-                  value={evaluator}
-                  onChange={(e) => setEvaluator(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Select evaluator type</option>
-                  {form.evaluatorOptions.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Evaluator (optional)</label>
-                <input
-                  type="text"
-                  value={evaluator}
-                  onChange={(e) => setEvaluator(e.target.value)}
-                  placeholder="Your role or relationship"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
+                <label className="text-sm font-medium mb-1.5 block">Teacher/Personnel</label>
+                <div className="w-full rounded-md border border-input bg-muted/50 px-3 py-2 text-sm font-medium">
+                  {evaluator}
+                </div>
               </div>
             )}
           </div>

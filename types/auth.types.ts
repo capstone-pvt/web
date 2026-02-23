@@ -46,6 +46,7 @@ export interface AuthContextType {
   hasRole: (role: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
   hasAllPermissions: (permissions: string[]) => boolean;
+  extendSession: () => void;
 }
 
 export interface JWTPayload {

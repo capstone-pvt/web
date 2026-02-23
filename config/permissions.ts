@@ -31,7 +31,13 @@ export const PERMISSIONS = {
 
   // Evaluation Forms
   EVALUATION_FORMS_READ: 'evaluation-forms.read',
-  EVALUATION_FORMS_MANAGE: 'evaluation-forms.manage'
+  EVALUATION_FORMS_MANAGE: 'evaluation-forms.manage',
+
+  // Subject Management
+  SUBJECTS_CREATE: 'subjects.create',
+  SUBJECTS_READ: 'subjects.read',
+  SUBJECTS_UPDATE: 'subjects.update',
+  SUBJECTS_DELETE: 'subjects.delete',
 } as const;
 
 export const PERMISSION_CATEGORIES = {
@@ -41,7 +47,8 @@ export const PERMISSION_CATEGORIES = {
   PROJECT_MANAGEMENT: 'Project Management',
   ANALYTICS: 'Analytics',
   SETTINGS_MANAGEMENT: 'Settings Management',
-  EVALUATION_FORMS: 'Evaluation Forms'
+  EVALUATION_FORMS: 'Evaluation Forms',
+  SUBJECT_MANAGEMENT: 'Subject Management',
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;
