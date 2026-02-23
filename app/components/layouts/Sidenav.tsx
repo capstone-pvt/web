@@ -12,12 +12,17 @@ import {
   AccordionTrigger,
 } from '@/app/components/ui/accordion';
 
+/** Role names that count as Super Admin (display name or internal name). */
+const SUPER_ADMIN_ROLES = ['Super Admin', 'super'];
+
 interface NavItem {
   name: string;
   href?: string;
   icon: string;
   /** Single permission required, or any of these permissions (e.g. so Dean with users.read can see Settings) */
   permission?: string | string[];
+  /** If set, item is visible only when user has one of these roles (e.g. Help Guide for Super Admin only). */
+  roles?: string[];
   children?: {
     name: string;
     href: string;
@@ -161,11 +166,17 @@ const navigation: NavItem[] = [
       },
     ],
   },
+  {
+    name: 'Help Guide',
+    href: '/admin/help-guide',
+    icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+    roles: SUPER_ADMIN_ROLES,
+  },
 ];
 
 export default function Sidenav() {
   const pathname = usePathname();
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const { settings } = useSettings();
 
   const hasAnyPermission = (permission: string | string[] | undefined) => {
@@ -174,9 +185,15 @@ export default function Sidenav() {
     return list.some((p) => hasPermission(p));
   };
 
-  const visibleNavItems = navigation.filter((item) =>
-    hasAnyPermission(item.permission),
-  );
+  const hasAnyRole = (roles: string[] | undefined) => {
+    if (!roles?.length) return true;
+    return roles.some((r) => hasRole(r));
+  };
+
+  const visibleNavItems = navigation.filter((item) => {
+    if (item.roles !== undefined && !hasAnyRole(item.roles)) return false;
+    return hasAnyPermission(item.permission);
+  });
 
   return (
     <aside className="w-64 bg-gray-800 dark:bg-gray-900 text-white flex flex-col">
@@ -192,11 +209,13 @@ export default function Sidenav() {
 
               return (
                 <AccordionItem value={item.name} key={item.name} className="border-none">
-                  <AccordionTrigger className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                    </svg>
-                    <span>{item.name}</span>
+                  <AccordionTrigger className="flex w-full items-center px-4 py-3 rounded-lg text-left text-gray-300 hover:bg-gray-700 hover:text-white">
+                    <span className="flex flex-1 items-center gap-3 min-w-0">
+                      <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                      </svg>
+                      <span className="truncate">{item.name}</span>
+                    </span>
                   </AccordionTrigger>
                   <AccordionContent className="pl-8 pt-2">
                     {visibleChildren.map(child => {
